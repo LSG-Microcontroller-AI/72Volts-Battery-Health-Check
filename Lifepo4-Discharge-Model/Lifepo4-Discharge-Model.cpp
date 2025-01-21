@@ -49,7 +49,13 @@ float err_rete = 0.00f;
 
 float _err_amm = 0.00025f;
 
-float epsilon = 0.009;
+//to modify and add to file model.bin
+
+//last used for S11
+float epsilon = 0.08;
+
+//used for S12
+//float epsilon = 0.01;
 
 const uint8_t numberOf_X = 2;
 
@@ -88,6 +94,8 @@ float battery_out_training[training_samples][numberOf_Y]{};
 string global_time_recorded;
 
 default_random_engine generator(time(0));
+
+const string _relative_files_path = "72V-Battery-S11";
 
 int main()
 {
@@ -178,7 +186,6 @@ int main()
 
 	cout << "press a key..\n\n";
 }
-
 
 double xavier_init(double n_x, double n_y)
 {
@@ -461,8 +468,6 @@ void apprendi()
 
 	} while (err_epoca > _err_amm);
 
-
-
 	auto end = std::chrono::system_clock::now();
 
 	std::chrono::duration<double> elapsed_seconds = end - start;
@@ -585,7 +590,7 @@ void read_samples_from_file_diagram_battery()
 {
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
 
-	std::string filename = "Battery11/BATTS11Total.CSV";
+	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";
 
 	// Apertura del file
 	std::ifstream file(filename);
@@ -723,7 +728,7 @@ void read_samples_from_file_diagram_battery()
 
 void read_weights_from_file()
 {
-	std::ifstream in("model.bin", std::ios_base::binary);
+	std::ifstream in(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
 
 	if (in.good())
 	{
@@ -765,7 +770,7 @@ void write_weights_on_file()
 	{
 		//cout << "\nWriting to file... \n\n";
 
-		std::ofstream fw("model.bin", std::ios_base::binary);
+		std::ofstream fw(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
 
 		if (fw.good())
 		{

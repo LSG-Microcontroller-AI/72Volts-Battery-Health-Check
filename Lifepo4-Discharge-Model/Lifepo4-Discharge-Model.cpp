@@ -52,7 +52,7 @@ float _err_amm = 0.00025f;
 //to modify and add to file model.bin
 
 //last used for S11
-float epsilon = 0.08;
+float epsilon = 0.000001;
 
 //used for S12
 //float epsilon = 0.01;
@@ -294,14 +294,20 @@ void lavora() {
 		std::cout << "x[0] (Ampere) = " << x[0] << "\n";
 		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";
 
-		// Operazioni sui valori
-		x[0] = x[0] / 100.00f;
-		x[1] = x[1] / 1000.00f;
+
+		x[0] = log(x[0] + 1.0f) / 10.0f;
+
+		x[1] = log(x[0] + 1.0f) / 10.0f;
+
+
+		//// Operazioni sui valori
+		//x[0] = x[0] / 100.00f;
+		//x[1] = x[1] / 1000.00f;
 
 		forward();
 
 		// Stampa dei risultati
-		std::cout << "\n x[0] = " << x[0] * 100.00f << " x[1] = " << x[1] * 1000.00f << "\n"
+		std::cout << "\n x[0] = " << exp(x[0]*10)  << " x[1] = " << exp(x[1]*10) << "\n"
 			<< "\n y[0] = " << y[0] * 10.00f
 			<< "\n y[1] = " << y[1] * 10.00f
 			<< "\n y[2] = " << y[2] * 10.00f
@@ -333,9 +339,9 @@ void apprendi()
 
 		for (unsigned long p = 0; p < training_samples; p++)
 		{
-			x[0] = amps_training[p] / 100.00f;
+			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 
-			x[1] = watts_hour_training[p] / 1000.00f;
+			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
 
 			for (int i = 0; i < numberOf_Y; i++) {
 
@@ -370,9 +376,9 @@ void apprendi()
 		{
 			std::cout << "\nepoca:" << epoca <<
 				"\nlast modified date: " << global_time_recorded <<
-				"\nerr_epoca=" << err_epoca << 
+				"\nerr_epoca=" << err_epoca <<
 				" min.err_epoca= " << err_epoca_min_value <<
-				" err_rete=" << err_rete << 
+				" err_rete=" << err_rete <<
 				" min.err_rete= " << err_min_rete <<
 				"\n";
 
@@ -420,49 +426,49 @@ void apprendi()
 			//	std::cout << "La variabile Epsilon non è stata modificata. Il valore attuale è: " << epsilon << std::endl;
 			//}
 
-			if ((err_epoca < err_epoca_min_value) || (err_rete < err_min_rete) )
+			if ((err_epoca < err_epoca_min_value) || (err_rete < err_min_rete))
 			{
-			std::time_t now = std::time(nullptr);
-			std::tm local_time;
+				std::time_t now = std::time(nullptr);
+				std::tm local_time;
 #ifdef __linux__
-			if (localtime_r(&now, &local_time) == nullptr)
-			{
-				std::cerr << "Errore nella conversione del tempo.\n";
-			}
-			else
-			{
-				// Stampa il tempo locale in formato leggibile
-				std::cout << "Anno: " << (1900 + local_time.tm_year) << "\n";
-				std::cout << "Mese: " << (1 + local_time.tm_mon) << "\n";
-				std::cout << "Giorno: " << local_time.tm_mday << "\n";
-				std::cout << "Ora: " << local_time.tm_hour << "\n";
-				std::cout << "Minuti: " << local_time.tm_min << "\n";
-				std::cout << "Secondi: " << local_time.tm_sec << "\n";
-			}
+				if (localtime_r(&now, &local_time) == nullptr)
+				{
+					std::cerr << "Errore nella conversione del tempo.\n";
+				}
+				else
+				{
+					// Stampa il tempo locale in formato leggibile
+					std::cout << "Anno: " << (1900 + local_time.tm_year) << "\n";
+					std::cout << "Mese: " << (1 + local_time.tm_mon) << "\n";
+					std::cout << "Giorno: " << local_time.tm_mday << "\n";
+					std::cout << "Ora: " << local_time.tm_hour << "\n";
+					std::cout << "Minuti: " << local_time.tm_min << "\n";
+					std::cout << "Secondi: " << local_time.tm_sec << "\n";
+				}
 
 #elif _WIN32
 
-			if (localtime_s(&local_time, &now) != 0)
-			{
-				std::cerr << "Errore nella conversione del tempo.\n";
-			}
+				if (localtime_s(&local_time, &now) != 0)
+				{
+					std::cerr << "Errore nella conversione del tempo.\n";
+				}
 
 
-			global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
-				std::to_string(local_time.tm_mon + 1) + "/" +
-				std::to_string(local_time.tm_year + 1900) + " " +
-				std::to_string(local_time.tm_hour) + ":" +
-				std::to_string(local_time.tm_min) + ":" +
-				std::to_string(local_time.tm_sec);
+				global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
+					std::to_string(local_time.tm_mon + 1) + "/" +
+					std::to_string(local_time.tm_year + 1900) + " " +
+					std::to_string(local_time.tm_hour) + ":" +
+					std::to_string(local_time.tm_min) + ":" +
+					std::to_string(local_time.tm_sec);
 
 
 #else
 
 #endif
 
-			err_min_rete = err_rete;
-			std::cout << "\nwrite on file\n";
-			write_weights_on_file();
+				err_min_rete = err_rete;
+				std::cout << "\nwrite on file\n";
+				write_weights_on_file();
 			}
 		}
 
@@ -583,7 +589,8 @@ double get_random_number_from_xavier()
 
 float sigmoid_activation(float Z)
 {
-	return 1.00f / (1.00f + pow(M_E, -Z));
+	//return 1.00f / (1.00f + pow(M_E, -Z));
+	return 1.00f / (1.00f + exp(-Z));
 }
 
 void read_samples_from_file_diagram_battery()

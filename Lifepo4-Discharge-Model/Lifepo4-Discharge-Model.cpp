@@ -12,6 +12,13 @@ using namespace std;
 #include <fstream>
 #include <cfloat>
 #include <random>
+#include "imgui.h"
+#include "implot.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include <GLFW/glfw3.h>
+#include <vector>
+
 
 
 #ifdef __linux__
@@ -97,8 +104,115 @@ default_random_engine generator(time(0));
 
 const string _relative_files_path = "72V-Battery-S11";
 
+void GenerateRandomLinePoints(float& X1, float& X2, float& Y1, float& Y2) {
+	// Creiamo un generatore di numeri casuali
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<float> disX(-10.0f, 10.0f);  // Distribuzione per X tra -10 e 10
+	std::uniform_real_distribution<float> disY(-10.0f, 10.0f);  // Distribuzione per Y tra -10 e 10
+
+	// Generiamo i punti X1, X2, Y1, Y2
+	X1 = disX(gen);
+	X2 = disX(gen);
+	Y1 = disY(gen);
+	Y2 = Y1 + (X2 - X1) * (disY(gen) - disY(gen)) / (X2 - X1);  // Calcoliamo Y2 in base alla pendenza
+}
+
+
+
+GLFWwindow* InitWindow() {
+	if (!glfwInit()) {
+		return nullptr;
+	}
+
+	// Creazione della finestra con dimensioni standard
+	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
+	if (!window) {
+		glfwTerminate();
+		return nullptr;
+	}
+
+	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImPlot::CreateContext();
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 130");
+
+	return window;
+}
+
+void RenderLinePlot(float X1, float X2, float Y1, float Y2) {
+	// Creiamo un vettore con i dati per l'asse X (2 punti per la retta)
+	std::vector<float> xData = { X1, X2 };
+	std::vector<float> yData = { Y1, Y2 };
+
+	// Log per il debugging
+	std::cout << "Sto creando il grafico della retta!" << std::endl;
+
+	// Forziamo la finestra a occupare l'intera area disponibile
+	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y));
+	ImGui::SetNextWindowPos(ImVec2(0, 0));
+
+	ImGui::Begin("Grafico Linea", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+
+	// Creazione del grafico della retta
+	ImPlot::SetNextAxesLimits(X1 - 1, X2 + 1, min(Y1, Y2) - 1, max(Y1, Y2) + 1, ImGuiCond_Always);
+	if (ImPlot::BeginPlot("Linea", ImVec2(-1, 300))) {  // Altezza fissa, larghezza automatica
+		ImPlot::PlotLine("Retta", xData.data(), yData.data(), xData.size());
+		ImPlot::EndPlot();
+	}
+
+	ImGui::End();
+}
+
+GLFWwindow* window;
+
+void OpenPlots()
+{
+	float X1, X2, Y1, Y2;
+	GenerateRandomLinePoints(X1, X2, Y1, Y2);
+	//if (!window) return;
+	
+		glfwPollEvents();
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+		RenderLinePlot(X1, X2, Y1, Y2);
+		// Rendering
+		ImGui::Render();
+		int display_w, display_h;
+		glfwGetFramebufferSize(window, &display_w, &display_h);
+		glViewport(0, 0, display_w, display_h);
+		glClear(GL_COLOR_BUFFER_BIT);
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		glfwSwapBuffers(window);
+		GLenum err;
+		while ((err = glGetError()) != GL_NO_ERROR) {
+			std::cout << "Errore OpenGL: " << err << std::endl;
+		}
+	
+
+	//while (true);
+
+	//// Pulizia prima di uscire
+	//ImGui_ImplOpenGL3_Shutdown();
+	//ImGui_ImplGlfw_Shutdown();
+	//ImPlot::DestroyContext();
+	//ImGui::DestroyContext();
+	//glfwDestroyWindow(window);
+	//glfwTerminate();
+}
+
 int main()
 {
+	window = InitWindow();
+	
+	//OpenPlots();
+
+
 #ifdef __linux__
 
 #elif _WIN32
@@ -374,6 +488,7 @@ void apprendi()
 		//cout << "stop when err_epoca < " << _err_amm << "\n\n";
 		if (cout_counter == 10000)
 		{
+			OpenPlots();
 			std::cout << "\nepoca:" << epoca <<
 				"\nlast modified date: " << global_time_recorded <<
 				"\nerr_epoca=" << err_epoca <<
@@ -825,4 +940,8 @@ void write_weights_on_file()
 		cerr << msg << endl;
 	}
 }
+
+
+
+
 

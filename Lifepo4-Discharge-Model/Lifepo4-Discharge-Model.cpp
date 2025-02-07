@@ -52,17 +52,11 @@ void read_samples_from_file_diagram_battery();
 
 float sigmoid_activation(float A);
 
-float err_rete = 0.00f;
+float _err_rete = 0.00f;
 
 float _err_amm = 0.00025f;
 
-//to modify and add to file model.bin
-
-//last used for S11
-float epsilon = 0.000001;
-
-//used for S12
-//float epsilon = 0.01;
+float _epsilon = 0.01;
 
 const uint8_t numberOf_X = 2;
 
@@ -104,114 +98,175 @@ default_random_engine generator(time(0));
 
 const string _relative_files_path = "72V-Battery-S11";
 
-void GenerateRandomLinePoints(float& X1, float& X2, float& Y1, float& Y2) {
-	// Creiamo un generatore di numeri casuali
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<float> disX(-10.0f, 10.0f);  // Distribuzione per X tra -10 e 10
-	std::uniform_real_distribution<float> disY(-10.0f, 10.0f);  // Distribuzione per Y tra -10 e 10
+GLFWwindow* window;
 
-	// Generiamo i punti X1, X2, Y1, Y2
-	X1 = disX(gen);
-	X2 = disX(gen);
-	Y1 = disY(gen);
-	Y2 = Y1 + (X2 - X1) * (disY(gen) - disY(gen)) / (X2 - X1);  // Calcoliamo Y2 in base alla pendenza
-}
+std::vector<double> ascissa;
+
+std::vector<double> ordinata1;
+
+std::vector<double> ordinata2;
+
+void render_plot(const char* window_name) {
+
+	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_Always);
+	
+	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
+
+	ImGui::Begin(window_name, nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+
+	ImVec2 plot_size = ImVec2(ImGui::GetWindowSize().x - 20, ImGui::GetWindowSize().y - 60);
+
+	if (ImPlot::BeginPlot("Andamento Errore", plot_size)) {
+		
+		// ✅ Cambia il colore della griglia in giallo acceso
+		ImPlot::PushStyleColor(ImPlotCol_AxisGrid, ImVec4(1.0f, 1.0f, 0.3f, 0.7f));
+
+		// ✅ Cambia il colore della linea in azzurro chiaro
+		ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.3f, 0.7f, 1.0f, 1.0f));
+
+		// ✅ Attiva i marker (punti) e li imposta in azzurro chiaro
+		ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.0f, ImVec4(0.3f, 0.8f, 1.0f, 1.0f), 1.0f);
 
 
+		// Imposta gli assi con AutoFit per adattarli ai dati
+		ImPlot::SetupAxes("Epoca", "Errore", ImPlotAxisFlags_AutoFit);
+		
+		ImPlot::SetupAxisLimits(ImAxis_X1, 0, (ascissa.empty() ? 100 : ascissa.back() + 10), ImGuiCond_Always);
+		
+		ImPlot::SetupAxisLimits(ImAxis_Y1, 0, (ordinata1.empty() ? 1.0 : *std::max_element(ordinata1.begin(), ordinata1.end()) + 0.1), ImGuiCond_Always);
 
-GLFWwindow* InitWindow() {
-	if (!glfwInit()) {
-		return nullptr;
-	}
+		// Controlliamo se ci sono dati da disegnare
+		if (!ascissa.empty()) {
 
-	// Creazione della finestra con dimensioni standard
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
-	if (!window) {
-		glfwTerminate();
-		return nullptr;
-	}
+			ImPlot::PlotLine("Errore", ascissa.data(), ordinata1.data(), ascissa.size());
+		}
 
-	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1);
+		// ✅ Ripristina i colori predefiniti (Griglia e Linea)
+		ImPlot::PopStyleColor(2);
 
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImPlot::CreateContext();
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init("#version 130");
-
-	return window;
-}
-
-void RenderLinePlot(float X1, float X2, float Y1, float Y2) {
-	// Creiamo un vettore con i dati per l'asse X (2 punti per la retta)
-	std::vector<float> xData = { X1, X2 };
-	std::vector<float> yData = { Y1, Y2 };
-
-	// Log per il debugging
-	std::cout << "Sto creando il grafico della retta!" << std::endl;
-
-	// Forziamo la finestra a occupare l'intera area disponibile
-	ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y));
-	ImGui::SetNextWindowPos(ImVec2(0, 0));
-
-	ImGui::Begin("Grafico Linea", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-
-	// Creazione del grafico della retta
-	ImPlot::SetNextAxesLimits(X1 - 1, X2 + 1, min(Y1, Y2) - 1, max(Y1, Y2) + 1, ImGuiCond_Always);
-	if (ImPlot::BeginPlot("Linea", ImVec2(-1, 300))) {  // Altezza fissa, larghezza automatica
-		ImPlot::PlotLine("Retta", xData.data(), yData.data(), xData.size());
 		ImPlot::EndPlot();
 	}
 
 	ImGui::End();
 }
 
-GLFWwindow* window;
+void render_plot2(const char* window_name) {
+	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_Always);
 
-void OpenPlots()
-{
-	float X1, X2, Y1, Y2;
-	GenerateRandomLinePoints(X1, X2, Y1, Y2);
-	//if (!window) return;
-	
-		glfwPollEvents();
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		RenderLinePlot(X1, X2, Y1, Y2);
-		// Rendering
-		ImGui::Render();
-		int display_w, display_h;
-		glfwGetFramebufferSize(window, &display_w, &display_h);
-		glViewport(0, 0, display_w, display_h);
-		glClear(GL_COLOR_BUFFER_BIT);
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		glfwSwapBuffers(window);
-		GLenum err;
-		while ((err = glGetError()) != GL_NO_ERROR) {
-			std::cout << "Errore OpenGL: " << err << std::endl;
+	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
+
+	ImGui::Begin(window_name, nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
+
+	ImVec2 plot_size = ImVec2(ImGui::GetWindowSize().x - 20, ImGui::GetWindowSize().y - 60);
+
+	if (ImPlot::BeginPlot("Andamento Errore", plot_size)) {
+		// ✅ Cambia il colore della griglia in giallo acceso
+		ImPlot::PushStyleColor(ImPlotCol_AxisGrid, ImVec4(1.0f, 1.0f, 0.3f, 0.7f));
+
+		// ✅ Cambia il colore della linea in azzurro chiaro
+		ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.3f, 0.7f, 1.0f, 1.0f));
+
+		// ✅ Rende i punti più piccoli (1.5f per ridurli)
+		ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.5f, ImVec4(0.3f, 0.8f, 1.0f, 1.0f), 1.0f);
+
+		// Imposta gli assi con AutoFit per adattarli ai dati
+		ImPlot::SetupAxes("Epoca", "Errore", ImPlotAxisFlags_AutoFit);
+		ImPlot::SetupAxisLimits(ImAxis_X1, 0, (ascissa.empty() ? 100 : ascissa.back() + 10), ImGuiCond_Always);
+		ImPlot::SetupAxisLimits(ImAxis_Y1, 0, (ordinata2.empty() ? 1.0 : *std::max_element(ordinata2.begin(), ordinata2.end()) + 0.1), ImGuiCond_Always);
+
+		// Controlliamo se ci sono dati da disegnare
+		if (!ascissa.empty()) {
+			ImPlot::PlotLine("Errore", ascissa.data(), ordinata2.data(), ascissa.size());
 		}
-	
 
-	//while (true);
+		// ✅ Ripristina i colori predefiniti (Griglia e Linea)
+		ImPlot::PopStyleColor(2);
 
-	//// Pulizia prima di uscire
-	//ImGui_ImplOpenGL3_Shutdown();
-	//ImGui_ImplGlfw_Shutdown();
-	//ImPlot::DestroyContext();
-	//ImGui::DestroyContext();
-	//glfwDestroyWindow(window);
-	//glfwTerminate();
+		ImPlot::EndPlot();
+	}
+
+	ImGui::End();
+}
+
+GLFWwindow* InitWindow() {
+
+	if (!glfwInit()) {
+		return nullptr;
+	}
+
+	// Abilita l'hint per una finestra massimizzata
+	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+
+	// Crea la finestra con dimensioni standard
+	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
+	if (!window) {
+		
+		glfwTerminate();
+		
+		return nullptr;
+	}
+
+	// Ora massimizziamo la finestra dopo la creazione
+	glfwMaximizeWindow(window);
+
+	glfwMakeContextCurrent(window);
+
+	glfwSwapInterval(1);
+
+	// Inizializzazione ImGui + ImPlot
+	IMGUI_CHECKVERSION();
+
+	ImGui::CreateContext();
+
+	ImPlot::CreateContext();
+
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+
+	ImGui_ImplOpenGL3_Init("#version 130");
+
+	return window;
+}
+
+void open_plots()
+{
+	glfwPollEvents();
+
+	ImGui_ImplOpenGL3_NewFrame();
+
+	ImGui_ImplGlfw_NewFrame();
+
+	ImGui::NewFrame();
+
+	render_plot("Errore vs err_rete");
+
+	render_plot2("Errore vs err_epoca");
+
+	ImGui::Render();
+
+	int display_w, display_h;
+
+	glfwGetFramebufferSize(window, &display_w, &display_h);
+
+	glViewport(0, 0, display_w, display_h);
+
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	glfwSwapBuffers(window);
+
+	GLenum err;
+
+	while ((err = glGetError()) != GL_NO_ERROR) {
+
+		std::cout << "Errore OpenGL: " << err << std::endl;
+
+	}
 }
 
 int main()
 {
 	window = InitWindow();
-	
-	//OpenPlots();
-
 
 #ifdef __linux__
 
@@ -221,10 +276,8 @@ int main()
 
 	// Sposta e massimizza la finestra
 	SetWindowPos(consoleWindow, nullptr, -1920, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-	ShowWindow(consoleWindow, SW_MAXIMIZE);
-	//std::cout << "La console è stata spostata e massimizzata!" << std::endl;
 
-	//system("pause");
+	ShowWindow(consoleWindow, SW_MAXIMIZE);
 
 #else
 
@@ -421,7 +474,7 @@ void lavora() {
 		forward();
 
 		// Stampa dei risultati
-		std::cout << "\n x[0] = " << exp(x[0]*10)  << " x[1] = " << exp(x[1]*10) << "\n"
+		std::cout << "\n x[0] = " << exp(x[0] * 10) << " x[1] = " << exp(x[1] * 10) << "\n"
 			<< "\n y[0] = " << y[0] * 10.00f
 			<< "\n y[1] = " << y[1] * 10.00f
 			<< "\n y[2] = " << y[2] * 10.00f
@@ -468,10 +521,10 @@ void apprendi()
 			back_propagate();
 
 
-			if (err_rete > err_epoca)
+			if (_err_rete > err_epoca)
 			{
-				//cout << "ciclo: " << p << "  errore_rete= " << err_rete << "\n";
-				err_epoca = err_rete;
+				//cout << "ciclo: " << p << "  errore_rete= " << _err_rete << "\n";
+				err_epoca = _err_rete;
 			}
 		}
 
@@ -483,109 +536,69 @@ void apprendi()
 
 		epoca++;
 
-		cout_counter++;
+		ascissa.push_back(epoca);
 
-		//cout << "stop when err_epoca < " << _err_amm << "\n\n";
-		if (cout_counter == 10000)
-		{
-			OpenPlots();
-			std::cout << "\nepoca:" << epoca <<
+		ordinata1.push_back(_err_rete);
+
+		ordinata2.push_back(err_epoca);
+
+		open_plots();
+
+		/*	std::cout << "\nepoca:" << epoca <<
 				"\nlast modified date: " << global_time_recorded <<
 				"\nerr_epoca=" << err_epoca <<
 				" min.err_epoca= " << err_epoca_min_value <<
-				" err_rete=" << err_rete <<
-				" min.err_rete= " << err_min_rete <<
-				"\n";
+				" _err_rete=" << _err_rete <<
+				" min._err_rete= " << err_min_rete <<
+				"\n";*/
 
-			cout_counter = 0;
+				//cout_counter = 0;
 
-			//if ((err_epoca >= err_epoca_first) && err_epoca_first > 0.00f)
-			//{
-			//	//epsilon = max(epsilon * epsilon_decay, epsilon_min);
-			//	if ((epsilon - 0.05f) >= 0.10f)
-			//	{
-			//		epsilon = epsilon - 0.05f;
-			//	}
-			//	else
-			//	{
-			//		epsilon = 0.90f;
-			//	}
-
-			//	std::cout << "Epsilon ridotto a: " << epsilon << "\n";
-			//}
-			//else {
-			//	if ((epsilon + 0.05f) <= 0.99f)
-			//	{
-			//		epsilon = epsilon + 0.05f;
-			//	}
-			//	else
-			//	{
-			//		epsilon = 0.10f;
-			//	}
-
-			//	std::cout << "Epsilon aumentato a: " << epsilon << "\n";
-			//}
-
-			//err_epoca_first = err_epoca;
-
-			//std::cout << "Vuoi cambiare la variabile Epsilon? (S per si, Y per no): ";
-			//char risposta = _getch();  // Legge il carattere premuto
-			//std::cout << risposta << std::endl;  // Mostra il carattere inseriton
-
-			//if (risposta == 'S' || risposta == 's') {
-			//	std::cout << "Inserisci il nuovo valore per Epsilon: ";
-			//	std::cin >> epsilon;
-			//	std::cout << "La nuova variabile Epsilon è stata impostata a: " << epsilon << std::endl;
-			//}
-			//else {
-			//	std::cout << "La variabile Epsilon non è stata modificata. Il valore attuale è: " << epsilon << std::endl;
-			//}
-
-			if ((err_epoca < err_epoca_min_value) || (err_rete < err_min_rete))
-			{
-				std::time_t now = std::time(nullptr);
-				std::tm local_time;
+		if ((err_epoca < err_epoca_min_value) || (_err_rete < err_min_rete))
+		{
+			std::time_t now = std::time(nullptr);
+			std::tm local_time;
 #ifdef __linux__
-				if (localtime_r(&now, &local_time) == nullptr)
-				{
-					std::cerr << "Errore nella conversione del tempo.\n";
-				}
-				else
-				{
-					// Stampa il tempo locale in formato leggibile
-					std::cout << "Anno: " << (1900 + local_time.tm_year) << "\n";
-					std::cout << "Mese: " << (1 + local_time.tm_mon) << "\n";
-					std::cout << "Giorno: " << local_time.tm_mday << "\n";
-					std::cout << "Ora: " << local_time.tm_hour << "\n";
-					std::cout << "Minuti: " << local_time.tm_min << "\n";
-					std::cout << "Secondi: " << local_time.tm_sec << "\n";
-				}
+			if (localtime_r(&now, &local_time) == nullptr)
+			{
+				std::cerr << "Errore nella conversione del tempo.\n";
+			}
+			else
+			{
+				// Stampa il tempo locale in formato leggibile
+				std::cout << "Anno: " << (1900 + local_time.tm_year) << "\n";
+				std::cout << "Mese: " << (1 + local_time.tm_mon) << "\n";
+				std::cout << "Giorno: " << local_time.tm_mday << "\n";
+				std::cout << "Ora: " << local_time.tm_hour << "\n";
+				std::cout << "Minuti: " << local_time.tm_min << "\n";
+				std::cout << "Secondi: " << local_time.tm_sec << "\n";
+			}
 
 #elif _WIN32
 
-				if (localtime_s(&local_time, &now) != 0)
-				{
-					std::cerr << "Errore nella conversione del tempo.\n";
-				}
+			if (localtime_s(&local_time, &now) != 0)
+			{
+				std::cerr << "Errore nella conversione del tempo.\n";
+			}
 
 
-				global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
+			/*	global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
 					std::to_string(local_time.tm_mon + 1) + "/" +
 					std::to_string(local_time.tm_year + 1900) + " " +
 					std::to_string(local_time.tm_hour) + ":" +
 					std::to_string(local_time.tm_min) + ":" +
-					std::to_string(local_time.tm_sec);
+					std::to_string(local_time.tm_sec);*/
 
 
 #else
 
 #endif
 
-				err_min_rete = err_rete;
-				std::cout << "\nwrite on file\n";
-				write_weights_on_file();
-			}
+			err_min_rete = _err_rete;
+			//std::cout << "\nwrite on file\n";
+			write_weights_on_file();
 		}
+		//}
 
 	} while (err_epoca > _err_amm);
 
@@ -658,26 +671,26 @@ void back_propagate()
 
 	float delta = 0.00f;
 
-	err_rete = 0.00f;
+	_err_rete = 0.00f;
 
 	for (int j = 0; j < numberOf_Y; j++)
 	{
-		if (abs(d[j] - y[j]) > err_rete)
+		if (abs(d[j] - y[j]) > _err_rete)
 		{
-			err_rete = abs(d[j] - y[j]);
+			_err_rete = abs(d[j] - y[j]);
 		}
 
 		delta = (d[j] - y[j]) * y[j] * (1.00f - y[j]);
 
 		for (int k = 0; k < numberOf_H; k++)
 		{
-			W2[k][j] += (epsilon * delta * h[k]);
+			W2[k][j] += (_epsilon * delta * h[k]);
 
 			err_H[k] += (delta * W2[k][j]);
 		}
 
 		// Aggiornamento del bias del livello di uscita
-		output_bias[j] += epsilon * delta;
+		output_bias[j] += _epsilon * delta;
 	}
 
 	for (int k = 0; k < numberOf_H; k++)
@@ -686,10 +699,10 @@ void back_propagate()
 
 		for (int i = 0; i < numberOf_X; i++)
 		{
-			W1[i][k] += (epsilon * delta * x[i]);
+			W1[i][k] += (_epsilon * delta * x[i]);
 		}
 
-		hidden_bias[k] += epsilon * delta;
+		hidden_bias[k] += _epsilon * delta;
 	}
 }
 

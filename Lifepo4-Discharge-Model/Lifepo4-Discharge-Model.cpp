@@ -19,7 +19,7 @@ using namespace std;
 #include <GLFW/glfw3.h>
 #include <vector>
 
-
+#include "plot_renderer.h"
 
 #ifdef __linux__
 
@@ -52,15 +52,17 @@ void read_samples_from_file_diagram_battery();
 
 float sigmoid_activation(float A);
 
+float _err_epoca;
+
 float _err_rete = 0.00f;
 
 float _err_amm = 0.00025f;
 
-float _epsilon = 0.01;
+float _epsilon = 0.1;
 
 const uint8_t numberOf_X = 2;
 
-const uint8_t numberOf_H = 8;
+const uint8_t numberOf_H = 10;
 
 const uint8_t numberOf_Y = 6;
 
@@ -68,7 +70,7 @@ float output_bias[numberOf_Y] = { 0.00 };
 
 float hidden_bias[numberOf_H] = { 0.00 };
 
-uint16_t const training_samples = 158;
+uint16_t const training_samples = 110;
 
 double _lower_bound_xavier;
 
@@ -100,93 +102,23 @@ const string _relative_files_path = "72V-Battery-S11";
 
 GLFWwindow* window;
 
-std::vector<double> ascissa;
+std::vector<double> ascissa1;
+
+std::vector<double> ascissa2;
+
+std::vector<double> ascissa3;
+
+std::vector<double> ascissa4;
 
 std::vector<double> ordinata1;
 
 std::vector<double> ordinata2;
 
-void render_plot(const char* window_name) {
+std::vector<double> ordinata3;
 
-	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_Always);
-	
-	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
+std::vector<double> ordinata4;
 
-	ImGui::Begin(window_name, nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
-
-	ImVec2 plot_size = ImVec2(ImGui::GetWindowSize().x - 20, ImGui::GetWindowSize().y - 60);
-
-	if (ImPlot::BeginPlot("Andamento Errore", plot_size)) {
-		
-		// ✅ Cambia il colore della griglia in giallo acceso
-		ImPlot::PushStyleColor(ImPlotCol_AxisGrid, ImVec4(1.0f, 1.0f, 0.3f, 0.7f));
-
-		// ✅ Cambia il colore della linea in azzurro chiaro
-		ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.3f, 0.7f, 1.0f, 1.0f));
-
-		// ✅ Attiva i marker (punti) e li imposta in azzurro chiaro
-		ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.0f, ImVec4(0.3f, 0.8f, 1.0f, 1.0f), 1.0f);
-
-
-		// Imposta gli assi con AutoFit per adattarli ai dati
-		ImPlot::SetupAxes("Epoca", "Errore", ImPlotAxisFlags_AutoFit);
-		
-		ImPlot::SetupAxisLimits(ImAxis_X1, 0, (ascissa.empty() ? 100 : ascissa.back() + 10), ImGuiCond_Always);
-		
-		ImPlot::SetupAxisLimits(ImAxis_Y1, 0, (ordinata1.empty() ? 1.0 : *std::max_element(ordinata1.begin(), ordinata1.end()) + 0.1), ImGuiCond_Always);
-
-		// Controlliamo se ci sono dati da disegnare
-		if (!ascissa.empty()) {
-
-			ImPlot::PlotLine("Errore", ascissa.data(), ordinata1.data(), ascissa.size());
-		}
-
-		// ✅ Ripristina i colori predefiniti (Griglia e Linea)
-		ImPlot::PopStyleColor(2);
-
-		ImPlot::EndPlot();
-	}
-
-	ImGui::End();
-}
-
-void render_plot2(const char* window_name) {
-	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_Always);
-
-	ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
-
-	ImGui::Begin(window_name, nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
-
-	ImVec2 plot_size = ImVec2(ImGui::GetWindowSize().x - 20, ImGui::GetWindowSize().y - 60);
-
-	if (ImPlot::BeginPlot("Andamento Errore", plot_size)) {
-		// ✅ Cambia il colore della griglia in giallo acceso
-		ImPlot::PushStyleColor(ImPlotCol_AxisGrid, ImVec4(1.0f, 1.0f, 0.3f, 0.7f));
-
-		// ✅ Cambia il colore della linea in azzurro chiaro
-		ImPlot::PushStyleColor(ImPlotCol_Line, ImVec4(0.3f, 0.7f, 1.0f, 1.0f));
-
-		// ✅ Rende i punti più piccoli (1.5f per ridurli)
-		ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle, 1.5f, ImVec4(0.3f, 0.8f, 1.0f, 1.0f), 1.0f);
-
-		// Imposta gli assi con AutoFit per adattarli ai dati
-		ImPlot::SetupAxes("Epoca", "Errore", ImPlotAxisFlags_AutoFit);
-		ImPlot::SetupAxisLimits(ImAxis_X1, 0, (ascissa.empty() ? 100 : ascissa.back() + 10), ImGuiCond_Always);
-		ImPlot::SetupAxisLimits(ImAxis_Y1, 0, (ordinata2.empty() ? 1.0 : *std::max_element(ordinata2.begin(), ordinata2.end()) + 0.1), ImGuiCond_Always);
-
-		// Controlliamo se ci sono dati da disegnare
-		if (!ascissa.empty()) {
-			ImPlot::PlotLine("Errore", ascissa.data(), ordinata2.data(), ascissa.size());
-		}
-
-		// ✅ Ripristina i colori predefiniti (Griglia e Linea)
-		ImPlot::PopStyleColor(2);
-
-		ImPlot::EndPlot();
-	}
-
-	ImGui::End();
-}
+int _epoca_index = 0;
 
 GLFWwindow* InitWindow() {
 
@@ -200,9 +132,9 @@ GLFWwindow* InitWindow() {
 	// Crea la finestra con dimensioni standard
 	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
 	if (!window) {
-		
+
 		glfwTerminate();
-		
+
 		return nullptr;
 	}
 
@@ -227,7 +159,7 @@ GLFWwindow* InitWindow() {
 	return window;
 }
 
-void open_plots()
+void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, PlotRenderer plot4)
 {
 	glfwPollEvents();
 
@@ -237,9 +169,13 @@ void open_plots()
 
 	ImGui::NewFrame();
 
-	render_plot("Errore vs err_rete");
+	plot1.Begin();
 
-	render_plot2("Errore vs err_epoca");
+	plot2.Begin();
+
+	plot3.Begin();
+
+	plot4.Begin();
 
 	ImGui::Render();
 
@@ -262,6 +198,7 @@ void open_plots()
 		std::cout << "Errore OpenGL: " << err << std::endl;
 
 	}
+
 }
 
 int main()
@@ -464,7 +401,7 @@ void lavora() {
 
 		x[0] = log(x[0] + 1.0f) / 10.0f;
 
-		x[1] = log(x[0] + 1.0f) / 10.0f;
+		x[1] = log(x[1] + 1.0f) / 10.0f;
 
 
 		//// Operazioni sui valori
@@ -488,11 +425,9 @@ float err_min_rete = FLT_MAX;
 
 void apprendi()
 {
-	int epoca = 0;
+	
 
-	float err_epoca;
-
-	int cout_counter = 0;
+	//int cout_counter = 0;
 
 	auto start = std::chrono::system_clock::now();
 
@@ -502,7 +437,7 @@ void apprendi()
 
 	do
 	{
-		err_epoca = 0.00f;
+		_err_epoca = 0.00f;
 
 		for (unsigned long p = 0; p < training_samples; p++)
 		{
@@ -520,44 +455,40 @@ void apprendi()
 
 			back_propagate();
 
-
-			if (_err_rete > err_epoca)
+			if (_err_rete > _err_epoca)
 			{
 				//cout << "ciclo: " << p << "  errore_rete= " << _err_rete << "\n";
-				err_epoca = _err_rete;
+				_err_epoca = _err_rete;
 			}
+
+			_epoca_index++;
+
 		}
 
+		ascissa1.push_back(_epoca_index);
 
-		if (err_epoca_min_value > err_epoca) {
+		ordinata1.push_back(_err_epoca);
 
-			err_epoca_min_value = err_epoca;
+		PlotRenderer plot1("epoca vs err_rete", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
+
+		open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
+
+		bool is_on_wtrite_file = false;
+
+		if (err_epoca_min_value > _err_epoca) {
+
+			is_on_wtrite_file = true;
+
+			err_epoca_min_value = _err_epoca;
 		}
-
-		epoca++;
-
-		ascissa.push_back(epoca);
-
-		ordinata1.push_back(_err_rete);
-
-		ordinata2.push_back(err_epoca);
-
-		open_plots();
-
-		/*	std::cout << "\nepoca:" << epoca <<
-				"\nlast modified date: " << global_time_recorded <<
-				"\nerr_epoca=" << err_epoca <<
-				" min.err_epoca= " << err_epoca_min_value <<
-				" _err_rete=" << _err_rete <<
-				" min._err_rete= " << err_min_rete <<
-				"\n";*/
-
 				//cout_counter = 0;
 
-		if ((err_epoca < err_epoca_min_value) || (_err_rete < err_min_rete))
+		if (is_on_wtrite_file)
 		{
 			std::time_t now = std::time(nullptr);
+
 			std::tm local_time;
+
 #ifdef __linux__
 			if (localtime_r(&now, &local_time) == nullptr)
 			{
@@ -582,12 +513,26 @@ void apprendi()
 			}
 
 
-			/*	global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
-					std::to_string(local_time.tm_mon + 1) + "/" +
-					std::to_string(local_time.tm_year + 1900) + " " +
-					std::to_string(local_time.tm_hour) + ":" +
-					std::to_string(local_time.tm_min) + ":" +
-					std::to_string(local_time.tm_sec);*/
+
+		/*	global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
+				std::to_string(local_time.tm_mon + 1) + "/" +
+				std::to_string(local_time.tm_year + 1900) + " " +
+				std::to_string(local_time.tm_hour) + ":" +
+				std::to_string(local_time.tm_min) + ":" +
+				std::to_string(local_time.tm_sec);
+
+
+
+			std::cout << "\nepoca:" << _epoca_index <<
+				"\nlast modified date: " << global_time_recorded <<
+				"\nerr_epoca=" << _err_epoca <<
+				" min._err_epoca= " << err_epoca_min_value <<
+				" _err_rete=" << _err_rete <<
+				" min._err_rete= " << err_min_rete <<
+				"\n";*/
+
+
+			
 
 
 #else
@@ -600,7 +545,7 @@ void apprendi()
 		}
 		//}
 
-	} while (err_epoca > _err_amm);
+	} while (_err_epoca > _err_amm);
 
 	auto end = std::chrono::system_clock::now();
 
@@ -681,6 +626,21 @@ void back_propagate()
 		}
 
 		delta = (d[j] - y[j]) * y[j] * (1.00f - y[j]);
+
+		/*if (j == 5)
+		{
+			ascissa1.push_back(_epoca_index);
+
+			ordinata1.push_back(delta);
+
+			ordinata2.push_back(_err_epoca);
+
+			PlotRenderer plot1("epoca vs deltaY", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
+
+			PlotRenderer plot2("epoca vs err_epoca", ascissa1, ordinata2, "Epoca", "Err_rete", "Andamento Errore_rete");
+
+			open_plots(plot1, plot2, PlotRenderer(), PlotRenderer());
+		}*/
 
 		for (int k = 0; k < numberOf_H; k++)
 		{
@@ -935,6 +895,10 @@ void write_weights_on_file()
 			{
 				fw.write((char*)&output_bias[j], sizeof(float));
 			}
+
+			fw.write((char*)&_err_epoca, sizeof(float));
+
+			
 
 
 			//fw.write((char*)&x[numberOf_X - 1], sizeof(float));

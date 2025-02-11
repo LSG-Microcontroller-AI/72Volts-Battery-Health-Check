@@ -60,11 +60,11 @@ float _err_amm = 0.00025f;
 
 float _epsilon = 0.10f;
 
-uint16_t const training_samples = 103;
+uint16_t const training_samples = 102;
 
 const uint8_t numberOf_X = 2;
 
-const uint8_t numberOf_H = 10;
+const uint8_t numberOf_H = 8;
 
 const uint8_t numberOf_Y = 6;
 
@@ -501,7 +501,7 @@ void apprendi()
 
 			if (err_epoca_min_value > _err_epoca) {
 
-				//is_on_wtrite_file = true;
+				is_on_wtrite_file = true;
 
 				err_epoca_min_value = _err_epoca;
 			}

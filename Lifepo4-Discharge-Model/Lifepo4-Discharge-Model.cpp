@@ -60,7 +60,7 @@ float _err_amm = 0.00025f;
 
 float _epsilon = 0.10f;
 
-uint16_t const training_samples = 9;
+uint16_t const training_samples = 103;
 
 const uint8_t numberOf_X = 2;
 
@@ -426,6 +426,8 @@ void lavora() {
 
 float err_min_rete = FLT_MAX;
 
+bool is_on_wtrite_file = false;
+
 void apprendi()
 {
 	int cout_counter = 0;
@@ -442,9 +444,9 @@ void apprendi()
 
 		for (unsigned long p = 0; p < training_samples; p++)
 		{
-			//x[0] = log(amps_training[p] + 1.0f) / 10.0f;
+			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 
-			x[0] = amps_training[p] / 100.0f;
+			//x[0] = amps_training[p] / 100.0f;
 
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
 
@@ -475,10 +477,13 @@ void apprendi()
 
 		cout_counter++;
 
+		is_on_wtrite_file = false;
+
 		if(cout_counter == 100000)
 		{
 			std::cout << "\nepoca:" << _epoca_index <<
-				"\nerr_epoca=" << _err_epoca << "\n";
+				"\nerr_epoca=" << _err_epoca << "\n"
+				"epsilon=" << _epsilon << "\n";
 
 			/*_epsilon = _epsilon - 0.001;
 
@@ -493,17 +498,14 @@ void apprendi()
 			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());*/
 			
 			cout_counter = 0;
+
+			if (err_epoca_min_value > _err_epoca) {
+
+				//is_on_wtrite_file = true;
+
+				err_epoca_min_value = _err_epoca;
+			}
 		}
-
-		bool is_on_wtrite_file = false;
-
-		if (err_epoca_min_value > _err_epoca) {
-
-			is_on_wtrite_file = true;
-
-			err_epoca_min_value = _err_epoca;
-		}
-				
 
 		if (is_on_wtrite_file)
 		{
@@ -556,7 +558,7 @@ void apprendi()
 #endif
 
 			err_min_rete = _err_rete;
-			//std::cout << "\nwrite on file\n";
+			std::cout << "\nwrite on file\n";
 			write_weights_on_file();
 		}
 		//}
@@ -686,7 +688,7 @@ void read_samples_from_file_diagram_battery()
 {
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
 
-	std::string filename = _relative_files_path + "/" + "test.CSV";//"72V_Battery.CSV";
+	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";//"72V_Battery.CSV";
 
 	// Apertura del file
 	std::ifstream file(filename);

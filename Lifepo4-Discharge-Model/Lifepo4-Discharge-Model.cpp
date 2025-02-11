@@ -58,7 +58,9 @@ float _err_rete = 0.00f;
 
 float _err_amm = 0.00025f;
 
-float _epsilon = 0.1;
+float _epsilon = 0.10f;
+
+uint16_t const training_samples = 9;
 
 const uint8_t numberOf_X = 2;
 
@@ -69,8 +71,6 @@ const uint8_t numberOf_Y = 6;
 float output_bias[numberOf_Y] = { 0.00 };
 
 float hidden_bias[numberOf_H] = { 0.00 };
-
-uint16_t const training_samples = 110;
 
 double _lower_bound_xavier;
 
@@ -203,7 +203,7 @@ void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, Plot
 
 int main()
 {
-	window = InitWindow();
+	//window = InitWindow();
 
 #ifdef __linux__
 
@@ -282,6 +282,9 @@ int main()
 	if (response == 'y')
 	{
 		cout << "\n Start to learning......\n";
+
+		std::cout << "Inserisci il valore per epsilon: ";
+		std::cin >> _epsilon;
 
 		apprendi();
 	}
@@ -425,9 +428,7 @@ float err_min_rete = FLT_MAX;
 
 void apprendi()
 {
-	
-
-	//int cout_counter = 0;
+	int cout_counter = 0;
 
 	auto start = std::chrono::system_clock::now();
 
@@ -441,9 +442,13 @@ void apprendi()
 
 		for (unsigned long p = 0; p < training_samples; p++)
 		{
-			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
+			//x[0] = log(amps_training[p] + 1.0f) / 10.0f;
+
+			x[0] = amps_training[p] / 100.0f;
 
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
+
+			//x[1] = watts_hour_training[p]  / 1000.0f;
 
 			for (int i = 0; i < numberOf_Y; i++) {
 
@@ -465,13 +470,30 @@ void apprendi()
 
 		}
 
-		ascissa1.push_back(_epoca_index);
+		/*cout << "Analisi del grfico errori";
+		std::cin.get();*/
 
-		ordinata1.push_back(_err_epoca);
+		cout_counter++;
 
-		PlotRenderer plot1("epoca vs err_rete", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
+		if(cout_counter == 100000)
+		{
+			std::cout << "\nepoca:" << _epoca_index <<
+				"\nerr_epoca=" << _err_epoca << "\n";
 
-		open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
+			/*_epsilon = _epsilon - 0.001;
+
+			cout << "epsilon = " << _epsilon << "\n";*/
+
+			/*ascissa1.push_back(_epoca_index);
+
+			ordinata1.push_back(_err_epoca);
+
+			PlotRenderer plot1("epoca vs err_epoca", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
+
+			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());*/
+			
+			cout_counter = 0;
+		}
 
 		bool is_on_wtrite_file = false;
 
@@ -481,7 +503,7 @@ void apprendi()
 
 			err_epoca_min_value = _err_epoca;
 		}
-				//cout_counter = 0;
+				
 
 		if (is_on_wtrite_file)
 		{
@@ -512,9 +534,7 @@ void apprendi()
 				std::cerr << "Errore nella conversione del tempo.\n";
 			}
 
-
-
-		/*	global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
+			/*global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
 				std::to_string(local_time.tm_mon + 1) + "/" +
 				std::to_string(local_time.tm_year + 1900) + " " +
 				std::to_string(local_time.tm_hour) + ":" +
@@ -530,10 +550,6 @@ void apprendi()
 				" _err_rete=" << _err_rete <<
 				" min._err_rete= " << err_min_rete <<
 				"\n";*/
-
-
-			
-
 
 #else
 
@@ -627,21 +643,6 @@ void back_propagate()
 
 		delta = (d[j] - y[j]) * y[j] * (1.00f - y[j]);
 
-		/*if (j == 5)
-		{
-			ascissa1.push_back(_epoca_index);
-
-			ordinata1.push_back(delta);
-
-			ordinata2.push_back(_err_epoca);
-
-			PlotRenderer plot1("epoca vs deltaY", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
-
-			PlotRenderer plot2("epoca vs err_epoca", ascissa1, ordinata2, "Epoca", "Err_rete", "Andamento Errore_rete");
-
-			open_plots(plot1, plot2, PlotRenderer(), PlotRenderer());
-		}*/
-
 		for (int k = 0; k < numberOf_H; k++)
 		{
 			W2[k][j] += (_epsilon * delta * h[k]);
@@ -685,7 +686,7 @@ void read_samples_from_file_diagram_battery()
 {
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
 
-	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";
+	std::string filename = _relative_files_path + "/" + "test.CSV";//"72V_Battery.CSV";
 
 	// Apertura del file
 	std::ifstream file(filename);

@@ -21,10 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{f83e2471-05db-4caa-932f-ad426d834a07}</ProjectGuid>
-    <RootNamespace>SampleGenerator</RootNamespace>
+    <ProjectGuid>{c8b566c4-b3bb-40e2-8f74-df31aced738d}</ProjectGuid>
+    <RootNamespace>baddataanalizer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Stub_generator_file_for_test</ProjectName>
+    <ProjectName>extract_data_for_amps</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -129,10 +129,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Stub_generator_file_for_test.cpp" />
+    <ClCompile Include="extract_data_for_amps.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Bin\72V_Battery.CSV" />
+    <None Include="72V_Battery.CSV" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

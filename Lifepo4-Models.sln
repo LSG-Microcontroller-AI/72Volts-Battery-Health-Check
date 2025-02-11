@@ -6,6 +6,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lifepo4-Discharge-Model", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SampleGenerator", "SampleGenerator\SampleGenerator.vcxproj", "{F83E2471-05DB-4CAA-932F-AD426D834A07}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bad_data_analizer", "bad_data_analizer\bad_data_analizer.vcxproj", "{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -30,6 +32,14 @@ Global
 		{F83E2471-05DB-4CAA-932F-AD426D834A07}.Release|x64.Build.0 = Release|x64
 		{F83E2471-05DB-4CAA-932F-AD426D834A07}.Release|x86.ActiveCfg = Release|Win32
 		{F83E2471-05DB-4CAA-932F-AD426D834A07}.Release|x86.Build.0 = Release|Win32
+		{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}.Debug|x64.ActiveCfg = Debug|x64
+		{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}.Debug|x64.Build.0 = Debug|x64
+		{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}.Debug|x86.ActiveCfg = Debug|Win32
+		{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}.Debug|x86.Build.0 = Debug|Win32
+		{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}.Release|x64.ActiveCfg = Release|x64
+		{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}.Release|x64.Build.0 = Release|x64
+		{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}.Release|x86.ActiveCfg = Release|Win32
+		{C8B566C4-B3BB-40E2-8F74-DF31ACED738D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

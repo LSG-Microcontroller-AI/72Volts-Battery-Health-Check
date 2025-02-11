@@ -15,11 +15,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Stub_generator_file_for_test.cpp">
+    <ClCompile Include="extract_data_for_amps.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Bin\72V_Battery.CSV" />
+    <None Include="72V_Battery.CSV" />
   </ItemGroup>
 </Project>

@@ -481,13 +481,13 @@ void apprendi()
 				"\nerr_epoca=" << _err_epoca << "\n"
 				"epsilon=" << _epsilon << "\n";
 
-			ascissa1.push_back(_epoca_index);
+			/*ascissa1.push_back(_epoca_index);
 
 			ordinata1.push_back(_err_epoca);
 
 			PlotRenderer plot1("epoca vs err_epoca", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
 
-			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
+			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());*/
 			
 			cout_counter = 0;
 

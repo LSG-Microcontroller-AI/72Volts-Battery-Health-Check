@@ -446,11 +446,7 @@ void apprendi()
 		{
 			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 
-			//x[0] = amps_training[p] / 100.0f;
-
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
-
-			//x[1] = watts_hour_training[p]  / 1000.0f;
 
 			for (int i = 0; i < numberOf_Y; i++) {
 
@@ -485,17 +481,13 @@ void apprendi()
 				"\nerr_epoca=" << _err_epoca << "\n"
 				"epsilon=" << _epsilon << "\n";
 
-			/*_epsilon = _epsilon - 0.001;
-
-			cout << "epsilon = " << _epsilon << "\n";*/
-
-			/*ascissa1.push_back(_epoca_index);
+			ascissa1.push_back(_epoca_index);
 
 			ordinata1.push_back(_err_epoca);
 
 			PlotRenderer plot1("epoca vs err_epoca", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
 
-			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());*/
+			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
 			
 			cout_counter = 0;
 

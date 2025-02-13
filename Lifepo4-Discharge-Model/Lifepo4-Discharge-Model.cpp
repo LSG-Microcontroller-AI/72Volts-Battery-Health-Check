@@ -1,5 +1,4 @@
 using namespace std;
-
 #define _USE_MATH_DEFINES
 #include <iostream>
 #include <cmath>
@@ -18,108 +17,65 @@ using namespace std;
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
 #include <vector>
-
 #include "plot_renderer.h"
-
 #ifdef __linux__
-
 #elif _WIN32
 #include <conio.h>
 #include <windows.h>
-#include <ctime>
-
 #else
-
 #endif
-
 void init();
-
 void lavora();
-
 double get_random_number_from_xavier();
-
 void forward();
-
 void apprendi();
-
 void back_propagate();
-
 void read_weights_from_file();
-
 void write_weights_on_file();
-
 void read_samples_from_file_diagram_battery();
-
 float sigmoid_activation(float A);
-
 float _err_epoca;
-
 float _err_rete = 0.00f;
-
-float _err_amm = 0.00025f;
-
+float _err_amm = 0.000025f;
 float _epsilon = 0.10f;
-
 uint16_t const training_samples = 102;
-
 const uint8_t numberOf_X = 2;
-
 const uint8_t numberOf_H = 8;
-
 const uint8_t numberOf_Y = 6;
-
 float output_bias[numberOf_Y] = { 0.00 };
-
 float hidden_bias[numberOf_H] = { 0.00 };
-
 double _lower_bound_xavier;
-
 double _upper_bound_xavier;
-
 float W1[numberOf_X][numberOf_H] = { 0.00 };
-
 float W2[numberOf_H][numberOf_Y] = { 0.00 };
-
 float x[numberOf_X] = { 0.00 };
-
 float h[numberOf_H] = { 0.00 };
-
 float y[numberOf_Y] = { 0.00 };
-
 float d[numberOf_Y] = { 0.00 };
-
 float amps_training[training_samples]{};
-
 float watts_hour_training[training_samples]{};
-
 float battery_out_training[training_samples][numberOf_Y]{};
-
 string global_time_recorded;
-
 default_random_engine generator(time(0));
-
 const string _relative_files_path = "72V-Battery-S11";
-
 GLFWwindow* window;
-
 std::vector<double> ascissa1;
-
 std::vector<double> ascissa2;
-
 std::vector<double> ascissa3;
-
 std::vector<double> ascissa4;
-
 std::vector<double> ordinata1;
-
 std::vector<double> ordinata2;
-
 std::vector<double> ordinata3;
-
 std::vector<double> ordinata4;
-
 int _epoca_index = 0;
-
+mt19937 gen;
+float relu(float x) {
+	return (x > 0) ? x : 0;
+}
+// Derivata della funzione ReLU
+float relu_derivative(float x) {
+	return (x > 0) ? 1.0 : 0.0;
+}
 GLFWwindow* InitWindow() {
 
 	if (!glfwInit()) {
@@ -158,7 +114,6 @@ GLFWwindow* InitWindow() {
 
 	return window;
 }
-
 void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, PlotRenderer plot4)
 {
 	glfwPollEvents();
@@ -200,7 +155,6 @@ void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, Plot
 	}
 
 }
-
 int main()
 {
 	//window = InitWindow();
@@ -293,51 +247,31 @@ int main()
 
 	cout << "press a key..\n\n";
 }
-
-double xavier_init(double n_x, double n_y)
-{
-	return sqrt(6.0) / sqrt(n_x + n_y);
-}
-
-void init()
-{
-	double param = xavier_init(numberOf_X, numberOf_Y);
-
-	cout << "xavier glorot param : " << param << "\n\n";
-
-	_lower_bound_xavier = -param;
-
-	_upper_bound_xavier = param;
-
+void init() {
+	random_device rd;
+	gen = mt19937(rd());
+	double init_scale_input = sqrt(2.0 / numberOf_Y);
+	double init_scale_hidden = sqrt(2.0 / numberOf_H);
+	normal_distribution<double> dist(0.0, 1.0);
 	//-----------------------------------	bias initialization
-
 	for (int i = 0; i < numberOf_Y; i++) {
 		output_bias[i] = 0.1f;
 	}
-
 	for (int i = 0; i < numberOf_H; i++) {
 		hidden_bias[i] = 0.1f;
 	}
-
 	//-----------------------------------	console input values + Hidden bias values
-
 	//cout << "input elements initialization:\n\n";
-
-	for (int i = 0; i < (numberOf_X); i++)
-	{
+	for (int i = 0; i < (numberOf_X); i++) {
 		//x[i] = 0.00f;
 		cout << "x[" << i << "]" << "=" << x[i] << "\n";
 	}
-
 	for (int i = 0; i < numberOf_H; i++) {
 		cout << "hidden_bias[" << i << "]" << "=" << hidden_bias[i] << "-BIAS" << "\n";
 	}
-
-
 	//-----------------------------------	console hidden values + output bias values
 
-	for (int i = 0; i < (numberOf_H); i++)
-	{
+	for (int i = 0; i < (numberOf_H); i++) {
 		//h[i] = 0.00f;
 		cout << "h[" << i << "]" << "=" << h[i] << "\n";
 	}
@@ -345,11 +279,8 @@ void init()
 	for (int i = 0; i < numberOf_Y; i++) {
 		cout << "output_bias[" << i << "]" << "=" << output_bias[i] << "-BIAS" << "\n";
 	}
-
 	//cout << "output elements initialization:\n\n";
-
 	//-----------------------------------	console output values
-
 	for (int i = 0; i < numberOf_Y; i++)
 	{
 		//y[i] = 0.00f;
@@ -364,8 +295,7 @@ void init()
 	{
 		for (int k = 0; k < numberOf_H; k++)
 		{
-			W1[i][k] = get_random_number_from_xavier();
-
+			W1[i][k] = dist(gen) * init_scale_input;
 			cout << "W1[" << i << "]" << "[" << k << "]" << "=" << W1[i][k] << "\n";
 		}
 	}
@@ -376,13 +306,12 @@ void init()
 	{
 		for (int j = 0; j < numberOf_Y; j++)
 		{
-			W2[k][j] = get_random_number_from_xavier();
+			W2[k][j] = dist(gen) * init_scale_hidden;
 
 			cout << "W2[" << k << "]" << "[" << j << "]" << "=" << W2[k][j] << "\n";
 		}
 	}
 }
-
 void lavora() {
 	while (true) {
 		// Messaggio iniziale
@@ -423,41 +352,23 @@ void lavora() {
 			<< "\n y[5] = " << y[5] * 10.00f;
 	}
 }
-
 float err_min_rete = FLT_MAX;
-
 bool is_on_wtrite_file = false;
-
-void apprendi()
-{
+void apprendi() {
 	int cout_counter = 0;
-
 	auto start = std::chrono::system_clock::now();
-
 	read_samples_from_file_diagram_battery();
-
 	float err_epoca_min_value = FLT_MAX;
-
-	do
-	{
+	do {
 		_err_epoca = 0.00f;
-
-		for (unsigned long p = 0; p < training_samples; p++)
-		{
+		for (unsigned long p = 0; p < training_samples; p++) {
 			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
-
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
-
 			for (int i = 0; i < numberOf_Y; i++) {
-
 				d[i] = battery_out_training[p][i] / 10.00f;
-
 			}
-
 			forward();
-
 			back_propagate();
-
 			if (_err_rete > _err_epoca)
 			{
 				//cout << "ciclo: " << p << "  errore_rete= " << _err_rete << "\n";
@@ -467,20 +378,14 @@ void apprendi()
 			_epoca_index++;
 
 		}
-
 		/*cout << "Analisi del grfico errori";
 		std::cin.get();*/
-
 		cout_counter++;
-
 		is_on_wtrite_file = false;
-
-		if(cout_counter == 100000)
-		{
+		if (cout_counter == 100000) {
 			std::cout << "\nepoca:" << _epoca_index <<
 				"\nerr_epoca=" << _err_epoca << "\n"
 				"epsilon=" << _epsilon << "\n";
-
 			/*ascissa1.push_back(_epoca_index);
 
 			ordinata1.push_back(_err_epoca);
@@ -488,30 +393,20 @@ void apprendi()
 			PlotRenderer plot1("epoca vs err_epoca", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
 
 			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());*/
-			
 			cout_counter = 0;
-
 			if (err_epoca_min_value > _err_epoca) {
-
 				is_on_wtrite_file = true;
-
 				err_epoca_min_value = _err_epoca;
 			}
 		}
-
-		if (is_on_wtrite_file)
-		{
+		if (is_on_wtrite_file){
 			std::time_t now = std::time(nullptr);
-
 			std::tm local_time;
-
 #ifdef __linux__
-			if (localtime_r(&now, &local_time) == nullptr)
-			{
+			if (localtime_r(&now, &local_time) == nullptr){
 				std::cerr << "Errore nella conversione del tempo.\n";
 			}
-			else
-			{
+			else{
 				// Stampa il tempo locale in formato leggibile
 				std::cout << "Anno: " << (1900 + local_time.tm_year) << "\n";
 				std::cout << "Mese: " << (1 + local_time.tm_mon) << "\n";
@@ -520,14 +415,10 @@ void apprendi()
 				std::cout << "Minuti: " << local_time.tm_min << "\n";
 				std::cout << "Secondi: " << local_time.tm_sec << "\n";
 			}
-
 #elif _WIN32
-
-			if (localtime_s(&local_time, &now) != 0)
-			{
+			if (localtime_s(&local_time, &now) != 0){
 				std::cerr << "Errore nella conversione del tempo.\n";
 			}
-
 			/*global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
 				std::to_string(local_time.tm_mon + 1) + "/" +
 				std::to_string(local_time.tm_year + 1900) + " " +
@@ -544,27 +435,17 @@ void apprendi()
 				" _err_rete=" << _err_rete <<
 				" min._err_rete= " << err_min_rete <<
 				"\n";*/
-
 #else
-
 #endif
-
 			err_min_rete = _err_rete;
 			std::cout << "\nwrite on file\n";
 			write_weights_on_file();
 		}
-		//}
-
 	} while (_err_epoca > _err_amm);
-
 	auto end = std::chrono::system_clock::now();
-
 	std::chrono::duration<double> elapsed_seconds = end - start;
-
 	double sample_time = elapsed_seconds.count();
-
 	std::cout << "learning time : " << (int)(sample_time / 60) << " minutes.\n";
-
 #ifdef __linux__
 	// linux code goes here
 #elif _WIN32
@@ -586,81 +467,62 @@ void apprendi()
 
 #endif
 }
-
-void forward()
-{
-	for (int k = 0; k < (numberOf_H); k++)
-	{
+void forward() {
+	for (int k = 0; k < (numberOf_H); k++) {
 		float Zk = 0.00f;
-
-		for (int i = 0; i < numberOf_X; i++)
-		{
+		for (int i = 0; i < numberOf_X; i++) {
 			Zk += (W1[i][k] * x[i]);
 		}
-
 		//insert X bias
 		Zk += hidden_bias[k];
-
-		h[k] = sigmoid_activation(Zk);
+		h[k] = relu(Zk);
 	}
-
-	for (int j = 0; j < numberOf_Y; j++)
-	{
+	for (int j = 0; j < numberOf_Y; j++) {
 		float Zj = 0.00f;
-
-		for (int k = 0; k < numberOf_H; k++)
-		{
+		for (int k = 0; k < numberOf_H; k++) {
 			Zj += (W2[k][j] * h[k]);
 		}
-
 		//insert H bias
 		Zj += output_bias[j];
-
-		y[j] = sigmoid_activation(Zj);
+		y[j] = Zj;
 	}
 }
+void back_propagate() {
+	float err_H[numberOf_H] = { 0.0f };
+	float delta = 0.0f;
+	_err_rete = 0.0f;
 
-void back_propagate()
-{
-	float err_H[numberOf_H] = { 0.00f };
-
-	float delta = 0.00f;
-
-	_err_rete = 0.00f;
-
-	for (int j = 0; j < numberOf_Y; j++)
-	{
-		if (abs(d[j] - y[j]) > _err_rete)
-		{
-			_err_rete = abs(d[j] - y[j]);
+	// Calcolo del delta per il layer di output (attivazione lineare -> derivata = 1)
+	for (int j = 0; j < numberOf_Y; j++) {
+		float error = d[j] - y[j];
+		if (fabs(error) > _err_rete) {  // Usare fabs() per float
+			_err_rete = fabs(error);
 		}
+		delta = error;  // Derivata del layer output lineare è 1
 
-		delta = (d[j] - y[j]) * y[j] * (1.00f - y[j]);
-
-		for (int k = 0; k < numberOf_H; k++)
-		{
+		// Aggiornamento dei pesi del layer di output e accumulo dell'errore per il layer nascosto
+		for (int k = 0; k < numberOf_H; k++) {
 			W2[k][j] += (_epsilon * delta * h[k]);
-
-			err_H[k] += (delta * W2[k][j]);
+			err_H[k] += delta * W2[k][j];
 		}
-
-		// Aggiornamento del bias del livello di uscita
+		// Aggiornamento del bias per il layer di output
 		output_bias[j] += _epsilon * delta;
 	}
 
-	for (int k = 0; k < numberOf_H; k++)
-	{
-		delta = err_H[k] * h[k] * (1.00f - h[k]);
+	// Calcolo del delta per il layer nascosto usando la derivata della ReLU
+	for (int k = 0; k < numberOf_H; k++) {
+		// Derivata della ReLU: 1 se il neurone è attivo (h[k] > 0), 0 altrimenti
+		float relu_deriv = (h[k] > 0.0f) ? 1.0f : 0.0f;
+		delta = err_H[k] * relu_deriv;
 
-		for (int i = 0; i < numberOf_X; i++)
-		{
+		// Aggiornamento dei pesi del layer nascosto
+		for (int i = 0; i < numberOf_X; i++) {
 			W1[i][k] += (_epsilon * delta * x[i]);
 		}
-
+		// Aggiornamento del bias per il layer nascosto
 		hidden_bias[k] += _epsilon * delta;
 	}
 }
-
 double get_random_number_from_xavier()
 {
 	uniform_real_distribution<double> distribution(_lower_bound_xavier, _upper_bound_xavier);
@@ -669,91 +531,52 @@ double get_random_number_from_xavier()
 
 	return random_value;
 }
-
-float sigmoid_activation(float Z)
-{
-	//return 1.00f / (1.00f + pow(M_E, -Z));
-	return 1.00f / (1.00f + exp(-Z));
-}
-
-void read_samples_from_file_diagram_battery()
-{
+void read_samples_from_file_diagram_battery(){
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
-
 	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";//"72V_Battery.CSV";
-
 	// Apertura del file
 	std::ifstream file(filename);
-
 	// Verifica se il file è stato aperto correttamente
-	if (!file.is_open())
-	{
-
+	if (!file.is_open()){
 		std::cerr << "Errore nell'apertura del file " << filename << std::endl;
 	}
-
 	std::string line;
-
 	int training_block_index = 0;
-
 	int training_row_index = 0;
-
 	int training_row_pre_index = 0;
-
 	std::string item;
-
 	stringstream ss1;
-
-	while (!file.eof())
-	{
+	while (!file.eof()){
 		training_row_pre_index = training_row_index++;
-
-		switch (training_row_pre_index)
-		{
+		switch (training_row_pre_index){
 		case 0:
 		case 1:
 		case 2:
 		case 3:
 		case 4:
 		case 5:
-			try
-			{
+			try{
 				std::getline(file, line);
-
 				ss1.str(line);
-
 				std::getline(ss1, item, ';');
-
 				std::getline(ss1, item, ';');
-
 				std::getline(ss1, item, ';');
-
 				battery_out_training[training_block_index][training_row_pre_index] = std::stod(item);
-
 				cout << "battery[" << training_block_index << "]" << "[" << training_row_pre_index << "] = " << battery_out_training[training_block_index][training_row_pre_index] << "\n";
 			}
 			catch (...) {};
-
 			break;
 		case 6:
-			try
-			{
+			try{
 				std::getline(file, line);
-
 				ss1.str(line);
-
 				std::getline(ss1, item, ';');
-
 				std::getline(ss1, item, ';');
-
 				std::getline(ss1, item, ';');
-
 				watts_hour_training[training_block_index] = std::stod(item);
-
 				cout << "Watts/hour[" << training_block_index << "] = " << watts_hour_training[training_block_index] << "\n";
 			}
 			catch (...) {};
-
 			break;
 		case 7:
 			try
@@ -773,24 +596,18 @@ void read_samples_from_file_diagram_battery()
 				cout << "Ampere[" << training_block_index << "] = " << amps_training[training_block_index] << "\n";
 			}
 			catch (...) {};
-
 			break;
-
 		default:
 			training_block_index++;
 			training_row_index = 0;
 			break;
 		}
 	}
-
 #ifdef __linux__
-
 #elif _WIN32
 	//system("pause");
 #else
-
 #endif
-
 	if (training_block_index != training_samples)
 	{
 		cout << "\n\nALLERT!!!!!!! training sample different to index = \t" << training_block_index << "\n";
@@ -812,103 +629,61 @@ void read_samples_from_file_diagram_battery()
 
 #endif
 	}
-
 	file.close();
 }
-
-void read_weights_from_file()
-{
+void read_weights_from_file(){
 	std::ifstream in(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
-
-	if (in.good())
-	{
-		for (int i = 0; i < numberOf_X; i++)
-		{
-			for (int k = 0; k < numberOf_H; k++)
-			{
+	if (in.good()){
+		for (int i = 0; i < numberOf_X; i++){
+			for (int k = 0; k < numberOf_H; k++){
 				in.read((char*)&W1[i][k], sizeof(float));
 			}
 		}
-
-		for (int j = 0; j < numberOf_Y; j++)
-		{
-			for (int k = 0; k < numberOf_H; k++)
-			{
+		for (int j = 0; j < numberOf_Y; j++){
+			for (int k = 0; k < numberOf_H; k++){
 				in.read((char*)&W2[k][j], sizeof(float));
 			}
 		}
-
-		for (int k = 0; k < numberOf_H; k++)
-		{
+		for (int k = 0; k < numberOf_H; k++){
 			in.read((char*)&hidden_bias[k], sizeof(float));
 		}
-
-		for (int j = 0; j < numberOf_Y; j++)
-		{
+		for (int j = 0; j < numberOf_Y; j++){
 			in.read((char*)&output_bias[j], sizeof(float));
 		}
-
 		//in.read((char*)&x[numberOf_X - 1], sizeof(float));
-
 		//in.read((char*)&h[numberOf_H - 1], sizeof(float));
 	}
 }
-
-void write_weights_on_file()
-{
-	try
-	{
-		//cout << "\nWriting to file... \n\n";
-
+void write_weights_on_file(){
+	try{
 		std::ofstream fw(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
-
-		if (fw.good())
-		{
-			for (int i = 0; i < numberOf_X; i++)
-			{
-				for (int k = 0; k < numberOf_H; k++)
-				{
+		if (fw.good()){
+			for (int i = 0; i < numberOf_X; i++){
+				for (int k = 0; k < numberOf_H; k++){
 					fw.write((char*)&W1[i][k], sizeof(float));
 				}
 			}
-
-			for (int j = 0; j < numberOf_Y; j++)
-			{
-				for (int k = 0; k < numberOf_H; k++)
-				{
+			for (int j = 0; j < numberOf_Y; j++){
+				for (int k = 0; k < numberOf_H; k++){
 					fw.write((char*)&W2[k][j], sizeof(float));
 				}
 			}
-
-
-			for (int k = 0; k < numberOf_H; k++)
-			{
+			for (int k = 0; k < numberOf_H; k++){
 				fw.write((char*)&hidden_bias[k], sizeof(float));
 			}
-
-			for (int j = 0; j < numberOf_Y; j++)
-			{
+			for (int j = 0; j < numberOf_Y; j++){
 				fw.write((char*)&output_bias[j], sizeof(float));
 			}
-
 			fw.write((char*)&_err_epoca, sizeof(float));
-
-			
-
-
 			//fw.write((char*)&x[numberOf_X - 1], sizeof(float));
-
 			//fw.write((char*)&h[numberOf_H - 1], sizeof(float));
-
 			fw.close();
-
 			//cout << "\nFile closed... \n\n";
 		}
 		else
 			cout << "Problem with opening file";
 	}
-	catch (const char* msg)
-	{
+	catch (const char* msg){
 		cerr << msg << endl;
 	}
 }

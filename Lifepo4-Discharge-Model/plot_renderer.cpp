@@ -1,9 +1,5 @@
 #include "plot_renderer.h"
-
-
-
 PlotRenderer::PlotRenderer() {}
-
 PlotRenderer::PlotRenderer(const char* window_name,
     const std::vector<double>& ascissa1,
     const std::vector<double>& ordinata,
@@ -14,7 +10,6 @@ PlotRenderer::PlotRenderer(const char* window_name,
     x_label(x_label), y_label(y_label), plot_title(plot_title) {
     is_init = true;
 }
-
 void PlotRenderer::Begin() {
     if (!is_init) return;
     ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_Always);

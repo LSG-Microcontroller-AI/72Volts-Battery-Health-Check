@@ -36,9 +36,9 @@ void read_samples_from_file_diagram_battery();
 float sigmoid_activation(float A);
 float _err_epoca;
 float _err_rete = 0.00f;
-float _err_amm = 0.000025f;
+float _err_amm = 0.0089f;
 float _epsilon = 0.10f;
-uint16_t const training_samples = 102;
+uint16_t const training_samples = 9;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 8;
 const uint8_t numberOf_Y = 6;
@@ -362,8 +362,10 @@ void apprendi() {
 	do {
 		_err_epoca = 0.00f;
 		for (unsigned long p = 0; p < training_samples; p++) {
-			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
-			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
+			/*x[0] = log(amps_training[p] + 1.0f) / 10.0f;
+			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;*/
+			x[0] = amps_training[p] ;
+			x[1] = watts_hour_training[p];
 			for (int i = 0; i < numberOf_Y; i++) {
 				d[i] = battery_out_training[p][i] / 10.00f;
 			}
@@ -382,7 +384,7 @@ void apprendi() {
 		std::cin.get();*/
 		cout_counter++;
 		is_on_wtrite_file = false;
-		if (cout_counter == 100000) {
+		if (cout_counter == 1) {
 			std::cout << "\nepoca:" << _epoca_index <<
 				"\nerr_epoca=" << _err_epoca << "\n"
 				"epsilon=" << _epsilon << "\n";
@@ -394,7 +396,7 @@ void apprendi() {
 
 			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());*/
 			cout_counter = 0;
-			if (err_epoca_min_value > _err_epoca) {
+			if ((err_epoca_min_value > _err_epoca) && _err_epoca > 0.00f) {
 				is_on_wtrite_file = true;
 				err_epoca_min_value = _err_epoca;
 			}
@@ -523,6 +525,7 @@ void back_propagate() {
 		hidden_bias[k] += _epsilon * delta;
 	}
 }
+
 double get_random_number_from_xavier()
 {
 	uniform_real_distribution<double> distribution(_lower_bound_xavier, _upper_bound_xavier);
@@ -533,7 +536,7 @@ double get_random_number_from_xavier()
 }
 void read_samples_from_file_diagram_battery(){
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
-	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";//"72V_Battery.CSV";
+	std::string filename = _relative_files_path + "/" + "test.csv";//"72V_Battery.CSV";
 	// Apertura del file
 	std::ifstream file(filename);
 	// Verifica se il file è stato aperto correttamente

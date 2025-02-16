@@ -38,9 +38,9 @@ float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.0089f;
 float _epsilon = 0.10f;
-uint16_t const training_samples = 9;
+uint16_t const training_samples = 101;
 const uint8_t numberOf_X = 2;
-const uint8_t numberOf_H = 8;
+const uint8_t numberOf_H = 50;
 const uint8_t numberOf_Y = 6;
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
@@ -77,37 +77,25 @@ float relu_derivative(float x) {
 	return (x > 0) ? 1.0 : 0.0;
 }
 GLFWwindow* InitWindow() {
-
 	if (!glfwInit()) {
 		return nullptr;
 	}
-
 	// Abilita l'hint per una finestra massimizzata
 	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-
 	// Crea la finestra con dimensioni standard
 	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
 	if (!window) {
-
 		glfwTerminate();
-
 		return nullptr;
 	}
-
 	// Ora massimizziamo la finestra dopo la creazione
 	glfwMaximizeWindow(window);
-
 	glfwMakeContextCurrent(window);
-
 	glfwSwapInterval(1);
-
 	// Inizializzazione ImGui + ImPlot
 	IMGUI_CHECKVERSION();
-
 	ImGui::CreateContext();
-
 	ImPlot::CreateContext();
-
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 
 	ImGui_ImplOpenGL3_Init("#version 130");
@@ -362,10 +350,10 @@ void apprendi() {
 	do {
 		_err_epoca = 0.00f;
 		for (unsigned long p = 0; p < training_samples; p++) {
-			/*x[0] = log(amps_training[p] + 1.0f) / 10.0f;
-			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;*/
-			x[0] = amps_training[p] ;
-			x[1] = watts_hour_training[p];
+			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
+			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
+		/*	x[0] = amps_training[p] ;
+			x[1] = watts_hour_training[p];*/
 			for (int i = 0; i < numberOf_Y; i++) {
 				d[i] = battery_out_training[p][i] / 10.00f;
 			}
@@ -384,7 +372,7 @@ void apprendi() {
 		std::cin.get();*/
 		cout_counter++;
 		is_on_wtrite_file = false;
-		if (cout_counter == 1) {
+		if (cout_counter == 10000) {
 			std::cout << "\nepoca:" << _epoca_index <<
 				"\nerr_epoca=" << _err_epoca << "\n"
 				"epsilon=" << _epsilon << "\n";
@@ -536,7 +524,7 @@ double get_random_number_from_xavier()
 }
 void read_samples_from_file_diagram_battery(){
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
-	std::string filename = _relative_files_path + "/" + "test.csv";//"72V_Battery.CSV";
+	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";//"72V_Battery.CSV";
 	// Apertura del file
 	std::ifstream file(filename);
 	// Verifica se il file è stato aperto correttamente

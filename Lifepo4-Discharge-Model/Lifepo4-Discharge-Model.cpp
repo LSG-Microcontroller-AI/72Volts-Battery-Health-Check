@@ -1,5 +1,4 @@
 using namespace std;
-
 #define _USE_MATH_DEFINES
 #include <iostream>
 #include <cmath>
@@ -18,129 +17,74 @@ using namespace std;
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
 #include <vector>
-
 #include "plot_renderer.h"
-
 #ifdef __linux__
-
 #elif _WIN32
 #include <conio.h>
 #include <windows.h>
 #include <ctime>
-
 #else
-
 #endif
-
 void init();
-
 void lavora();
-
 double get_random_number_from_xavier();
-
 void forward();
-
 void apprendi();
-
 void back_propagate();
-
 void read_weights_from_file();
-
 void write_weights_on_file();
-
 void read_samples_from_file_diagram_battery();
-
 float sigmoid_activation(float A);
-
 float _err_epoca;
-
 float _err_rete = 0.00f;
-
 float _err_amm = 0.00025f;
-
 float _epsilon = 0.10f;
-
 uint16_t const training_samples = 101;
-
 const uint8_t numberOf_X = 2;
-
 const uint8_t numberOf_H = 10;
-
 const uint8_t numberOf_Y = 6;
-
 float output_bias[numberOf_Y] = { 0.00 };
-
 float hidden_bias[numberOf_H] = { 0.00 };
-
 double _lower_bound_xavier;
-
 double _upper_bound_xavier;
-
 float W1[numberOf_X][numberOf_H] = { 0.00 };
-
 float W2[numberOf_H][numberOf_Y] = { 0.00 };
-
 float x[numberOf_X] = { 0.00 };
-
 float h[numberOf_H] = { 0.00 };
-
 float y[numberOf_Y] = { 0.00 };
-
 float d[numberOf_Y] = { 0.00 };
-
 float amps_training[training_samples]{};
-
 float watts_hour_training[training_samples]{};
-
 float battery_out_training[training_samples][numberOf_Y]{};
-
 string global_time_recorded;
-
 default_random_engine generator(time(0));
-
 const string _relative_files_path = "72V-Battery-S11";
-
 GLFWwindow* window;
-
 std::vector<double> ascissa1;
-
 std::vector<double> ascissa2;
-
 std::vector<double> ascissa3;
-
 std::vector<double> ascissa4;
-
 std::vector<double> ordinata1;
-
 std::vector<double> ordinata2;
-
 std::vector<double> ordinata3;
-
 std::vector<double> ordinata4;
-
 int _epoca_index = 0;
-
+float err_min_rete = FLT_MAX;
+bool is_on_wtrite_file = false;
 GLFWwindow* InitWindow() {
-
 	if (!glfwInit()) {
 		return nullptr;
 	}
-
 	// Abilita l'hint per una finestra massimizzata
 	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-
 	// Crea la finestra con dimensioni standard
 	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
 	if (!window) {
-
 		glfwTerminate();
-
 		return nullptr;
 	}
-
 	// Ora massimizziamo la finestra dopo la creazione
 	glfwMaximizeWindow(window);
-
 	glfwMakeContextCurrent(window);
 	glfwSwapInterval(1);
 	// Inizializzazione ImGui + ImPlot
@@ -151,7 +95,6 @@ GLFWwindow* InitWindow() {
 	ImGui_ImplOpenGL3_Init("#version 130");
 	return window;
 }
-
 void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, PlotRenderer plot4) {
 	glfwPollEvents();
 	ImGui_ImplOpenGL3_NewFrame();
@@ -170,9 +113,7 @@ void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, Plot
 	glfwSwapBuffers(window);
 	GLenum err;
 	while ((err = glGetError()) != GL_NO_ERROR) {
-
 		std::cout << "Errore OpenGL: " << err << std::endl;
-
 	}
 }
 int main() {
@@ -344,9 +285,7 @@ void lavora() {
 			<< "\n y[5] = " << y[5] * 10.00f;
 	}
 }
-float err_min_rete = FLT_MAX;
-bool is_on_wtrite_file = false;
-void print_graph(){
+void print_graph() {
 	ascissa1.push_back(_epoca_index);
 	ordinata1.push_back(_err_epoca);
 	PlotRenderer plot1("epoca vs err_epoca", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
@@ -516,8 +455,8 @@ double get_random_number_from_xavier() {
 	return random_value;
 }
 float sigmoid_activation(float Z) {
-	//return 1.00f / (1.00f + pow(M_E, -Z));
-	return 1.00f / (1.00f + exp(-Z));
+	//return 1.00f / (1.00f + pow(M_E, (Z * -1)));
+	return 1.00f / (1.00f + exp((Z * -1)));
 }
 void read_samples_from_file_diagram_battery() {
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
@@ -552,7 +491,9 @@ void read_samples_from_file_diagram_battery() {
 				battery_out_training[training_block_index][training_row_pre_index] = std::stod(item);
 				cout << "battery[" << training_block_index << "]" << "[" << training_row_pre_index << "] = " << battery_out_training[training_block_index][training_row_pre_index] << "\n";
 			}
-			catch (...) {};
+			catch (...) {
+				cout << "--------------------------errore in lettura file";
+			};
 			break;
 		case 6:
 			try {
@@ -560,21 +501,17 @@ void read_samples_from_file_diagram_battery() {
 				ss1.str(line);
 				std::getline(ss1, item, ';');
 				std::getline(ss1, item, ';');
-
 				std::getline(ss1, item, ';');
-
 				watts_hour_training[training_block_index] = std::stod(item);
-
 				cout << "Watts/hour[" << training_block_index << "] = " << watts_hour_training[training_block_index] << "\n";
 			}
-			catch (...) {};
-
+			catch (...) {
+				cout << "----------------------------------errore in lettura file";
+			};
 			break;
 		case 7:
-			try
-			{
+			try {
 				std::getline(file, line);
-
 				ss1.str(line);
 
 				std::getline(ss1, item, ';');
@@ -587,47 +524,38 @@ void read_samples_from_file_diagram_battery() {
 
 				cout << "Ampere[" << training_block_index << "] = " << amps_training[training_block_index] << "\n";
 			}
-			catch (...) {};
-
+			catch (...) {
+				cout << "-------------------------------------------errore in lettura file";
+			};
 			break;
-
 		default:
 			training_block_index++;
 			training_row_index = 0;
 			break;
 		}
 	}
-
 #ifdef __linux__
-
 #elif _WIN32
 	//system("pause");
 #else
-
 #endif
-
-	if (training_block_index != training_samples)
-	{
+	if (training_block_index != training_samples) {
 		cout << "\n\nALLERT!!!!!!! training sample different to index = \t" << training_block_index << "\n";
 #ifdef __linux__
-
 #elif _WIN32
 		system("pause");
 #else
-
 #endif
 	}
 	else {
 		cout << "\n\nTraining sample index is " << training_block_index << " and seems to have been loaded correctly.";
 #ifdef __linux__
-
 #elif _WIN32
 		system("pause");
 #else
 
 #endif
 	}
-
 	file.close();
 }
 void read_weights_from_file() {
@@ -639,8 +567,7 @@ void read_weights_from_file() {
 			}
 		}
 		for (int j = 0; j < numberOf_Y; j++) {
-			for (int k = 0; k < numberOf_H; k++)
-			{
+			for (int k = 0; k < numberOf_H; k++) {
 				in.read((char*)&W2[k][j], sizeof(float));
 			}
 		}
@@ -652,8 +579,7 @@ void read_weights_from_file() {
 		}
 	}
 }
-void write_weights_on_file()
-{
+void write_weights_on_file() {
 	std::ofstream fw(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
 	if (fw.good()) {
 		for (int i = 0; i < numberOf_X; i++) {
@@ -674,8 +600,7 @@ void write_weights_on_file()
 		}
 		fw.write((char*)&_err_epoca, sizeof(float));
 		fw.close();
-	}
-	else {
+	}else {
 		cout << "Problem with opening file";
 	}
 }

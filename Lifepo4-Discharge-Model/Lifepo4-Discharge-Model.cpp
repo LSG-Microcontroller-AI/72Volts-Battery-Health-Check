@@ -36,7 +36,7 @@ void read_samples_from_file_diagram_battery();
 float _err_epoca;
 float _max_single_traning_output_error = 0.00f;
 float _err_amm = 0.0089f;
-float _epsilon = 0.10f;
+float _epsilon = 0.00001f;
 uint16_t const training_samples = 100;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
@@ -128,47 +128,43 @@ int main() {
 	// Sposta e massimizza la finestra
 	SetWindowPos(consoleWindow, nullptr, -1920, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	ShowWindow(consoleWindow, SW_MAXIMIZE);
-#else
 #endif
 	init();
 #ifdef __linux__
 	// no sound on linux
 #elif _WIN32
 	Beep(3000, 200);
-#else
 #endif
 	char response;
-	cout << "\n Do you want load the weights file\n";
+	cout << "'n' for new learning, 'c' for continue learning, 'e' for execute\n\n";
+	//cout << "\n Do you want load the weights file\n";
 #ifdef __linux__
 	response = std::cin.get();
 	std::cin.ignore();
 #elif _WIN32
 	response = _getch();
-#else
 #endif
-	if (response == 'y') {
-		cout << "\n Weights loaded\n";
+	if (response == 'e') {
+		lavora();
+	}
+	if (response == 'c') {
+		cout << "\n model loaded\n";
 		read_weights_from_file();
-	}
-	else {
-		cout << "\n Weights overwritten\n";
-	}
-	cout << "\n Do you want to start learning\n";
-#ifdef __linux__
-	response = std::cin.get();
-	std::cin.ignore();
-#elif _WIN32
-	response = _getch();
-#else
-#endif
-	if (response == 'y') {
-		cout << "\n Start to learning......\n";
-		std::cout << "Inserisci il valore per epsilon: ";
-		std::cin >> _epsilon;
 		apprendi();
 	}
-	lavora();
-	cout << "press a key..\n\n";
+	if (response == 'n'){
+		cout << "ATTENTION !!!!!!!!!!!!! are you sure to restart learning !!!!!!!!!!!!!!!!!!!\n\n";
+		response = _getch();
+		if (response == 'y') {
+			cout << "\n model overwritten\n";
+			apprendi();
+		}
+		else {
+			cout << "\n model loaded\n";
+			read_weights_from_file();
+			apprendi();
+		}
+	}
 }
 void init() {
 	random_device rd;
@@ -216,10 +212,8 @@ void init() {
 	}
 	//-----------------------------------	console W2 values
 	for (int k = 0; k < numberOf_H; k++) {
-		for (int j = 0; j < numberOf_Y; j++)
-		{
+		for (int j = 0; j < numberOf_Y; j++){
 			W2[k][j] = dist(gen) * init_scale_hidden;
-
 			cout << "W2[" << k << "]" << "[" << j << "]" << "=" << W2[k][j] << "\n";
 		}
 	}
@@ -228,32 +222,19 @@ void lavora() {
 	while (true) {
 		// Messaggio iniziale
 		std::cout << "\nInserisci i valori per Ampere e Watt-ora (Ctrl+C per uscire):\n";
-
 		// Input per x[0] (Ampere)
 		std::cout << "Inserisci il valore per x[0] (Ampere, float): ";
 		std::cin >> x[0];
-
 		// Input per x[1] (Watt-ora)
 		std::cout << "Inserisci il valore per x[1] (Watt-ora, float): ";
 		std::cin >> x[1];
-
 		// Stampa dei valori
 		std::cout << "\nHai inserito:\n";
 		std::cout << "x[0] (Ampere) = " << x[0] << "\n";
 		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";
-
-
 		x[0] = log(x[0] + 1.0f) / 10.0f;
-
 		x[1] = log(x[1] + 1.0f) / 10.0f;
-
-
-		//// Operazioni sui valori
-		//x[0] = x[0] / 100.00f;
-		//x[1] = x[1] / 1000.00f;
-
 		forward();
-
 		// Stampa dei risultati
 		std::cout << "\n x[0] = " << exp(x[0] * 10) << " x[1] = " << exp(x[1] * 10) << "\n"
 			<< "\n y[0] = " << y[0] * 10.00f
@@ -333,18 +314,15 @@ void apprendi() {
 				std::cout << "Secondi: " << local_time.tm_sec << "\n";
 			}
 #elif _WIN32
-			if (localtime_s(&local_time, &now) != 0) {
+			/*if (localtime_s(&local_time, &now) != 0) {
 				std::cerr << "Errore nella conversione del tempo.\n";
-			}
+			}*/
 			/*global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
 				std::to_string(local_time.tm_mon + 1) + "/" +
 				std::to_string(local_time.tm_year + 1900) + " " +
 				std::to_string(local_time.tm_hour) + ":" +
 				std::to_string(local_time.tm_min) + ":" +
 				std::to_string(local_time.tm_sec);
-
-
-
 			std::cout << "\nepoca:" << _epoca_index <<
 				"\nlast modified date: " << global_time_recorded <<
 				"\nerr_epoca=" << _err_epoca <<
@@ -352,7 +330,6 @@ void apprendi() {
 				" _max_single_traning_output_error=" << _max_single_traning_output_error <<
 				" min._max_single_traning_output_error= " << err_min_rete <<
 				"\n";*/
-#else
 #endif
 			err_min_rete = _max_single_traning_output_error;
 			std::cout << "\nwrite on file\n";
@@ -366,18 +343,12 @@ void apprendi() {
 #ifdef __linux__
 	// linux code goes here
 #elif _WIN32
-	Beep(3000, 200);
-	Beep(3000, 200);
-	Beep(3000, 200);
-	Beep(3000, 200);
-	Beep(3000, 200);
-#else
+	Beep(3000, 200);Beep(3000, 200);Beep(3000, 200);Beep(3000, 200);Beep(3000, 200);
 #endif
 #ifdef __linux__
 	getchar();
 #elif _WIN32
-	_getch();
-#else
+	int response = _getch();
 #endif
 }
 void forward() {
@@ -433,14 +404,6 @@ void back_propagate() {
 		hidden_bias[k] += _epsilon * delta;
 	}
 }
-double get_random_number_from_xavier()
-{
-	uniform_real_distribution<double> distribution(_lower_bound_xavier, _upper_bound_xavier);
-
-	double random_value = distribution(generator);
-
-	return random_value;
-}
 void read_samples_from_file_diagram_battery() {
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
 	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";//"72V_Battery.CSV";
@@ -474,7 +437,6 @@ void read_samples_from_file_diagram_battery() {
 				cout << "battery[" << training_block_index << "]" << "[" << training_row_pre_index << "] = " << battery_out_training[training_block_index][training_row_pre_index] << "\n";
 			break;
 		case 6:
-			
 				std::getline(file, line);
 				ss1.str(line);
 				std::getline(ss1, item, ';');
@@ -482,25 +444,16 @@ void read_samples_from_file_diagram_battery() {
 				std::getline(ss1, item, ';');
 				watts_hour_training[training_block_index] = std::stod(item);
 				cout << "Watts/hour[" << training_block_index << "] = " << watts_hour_training[training_block_index] << "\n";
-	
-			
 			break;
 		case 7:
 		
 				std::getline(file, line);
-
 				ss1.str(line);
-
 				std::getline(ss1, item, ';');
-
 				std::getline(ss1, item, ';');
-
 				std::getline(ss1, item, ';');
-
 				amps_training[training_block_index] = std::stod(item);
-
 				cout << "Ampere[" << training_block_index << "] = " << amps_training[training_block_index] << "\n";
-			
 			break;
 		default:
 			training_block_index++;
@@ -510,26 +463,22 @@ void read_samples_from_file_diagram_battery() {
 	}
 #ifdef __linux__
 #elif _WIN32
-	//system("pause");
 #else
 #endif
-
 	if ((training_block_index) + 1 != training_samples){
 		cout << "\n\nALLERT!!!!!!! training sample different to index = \t" << training_block_index << "\n";
 #ifdef __linux__
-
 #elif _WIN32
 		system("pause");
 #else
-
 #endif
 	}
 	else {
-		cout << "\n\nTraining sample index is " << training_block_index << " and seems to have been loaded correctly.";
+		//cout << "\n\nTraining sample index is " << training_block_index << " and seems to have been loaded correctly.";
 #ifdef __linux__
 
 #elif _WIN32
-		system("pause");
+		//system("pause");
 #else
 
 #endif

@@ -33,14 +33,13 @@ void back_propagate();
 void read_weights_from_file();
 void write_weights_on_file();
 void read_samples_from_file_diagram_battery();
-float sigmoid_activation(float A);
 float _err_epoca;
-float _err_rete = 0.00f;
+float _max_single_traning_output_error = 0.00f;
 float _err_amm = 0.0089f;
 float _epsilon = 0.10f;
-uint16_t const training_samples = 101;
+uint16_t const training_samples = 100;
 const uint8_t numberOf_X = 2;
-const uint8_t numberOf_H = 50;
+const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
@@ -69,13 +68,13 @@ std::vector<double> ordinata3;
 std::vector<double> ordinata4;
 int _epoca_index = 0;
 mt19937 gen;
+float err_min_rete = FLT_MAX;
+bool is_on_wtrite_file = false;
+float _max_single_traning_output_error_average = 0.00f;
 float relu(float x) {
 	return (x > 0) ? x : 0;
 }
 // Derivata della funzione ReLU
-float relu_derivative(float x) {
-	return (x > 0) ? 1.0 : 0.0;
-}
 GLFWwindow* InitWindow() {
 	if (!glfwInit()) {
 		return nullptr;
@@ -97,142 +96,78 @@ GLFWwindow* InitWindow() {
 	ImGui::CreateContext();
 	ImPlot::CreateContext();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
-
 	ImGui_ImplOpenGL3_Init("#version 130");
-
 	return window;
 }
-void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, PlotRenderer plot4)
-{
+void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, PlotRenderer plot4) {
 	glfwPollEvents();
-
 	ImGui_ImplOpenGL3_NewFrame();
-
 	ImGui_ImplGlfw_NewFrame();
-
 	ImGui::NewFrame();
-
 	plot1.Begin();
-
 	plot2.Begin();
-
 	plot3.Begin();
-
 	plot4.Begin();
-
 	ImGui::Render();
-
 	int display_w, display_h;
-
 	glfwGetFramebufferSize(window, &display_w, &display_h);
-
 	glViewport(0, 0, display_w, display_h);
-
 	glClear(GL_COLOR_BUFFER_BIT);
-
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 	glfwSwapBuffers(window);
-
 	GLenum err;
-
 	while ((err = glGetError()) != GL_NO_ERROR) {
-
 		std::cout << "Errore OpenGL: " << err << std::endl;
-
 	}
-
 }
-int main()
-{
+int main() {
 	//window = InitWindow();
-
 #ifdef __linux__
-
 #elif _WIN32
-
 	HWND consoleWindow = GetConsoleWindow();
-
 	// Sposta e massimizza la finestra
 	SetWindowPos(consoleWindow, nullptr, -1920, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-
 	ShowWindow(consoleWindow, SW_MAXIMIZE);
-
 #else
-
 #endif
-
 	init();
-
 #ifdef __linux__
-
 	// no sound on linux
-
 #elif _WIN32
-
 	Beep(3000, 200);
-
 #else
-
 #endif
-
 	char response;
-
 	cout << "\n Do you want load the weights file\n";
-
 #ifdef __linux__
-
 	response = std::cin.get();
-
 	std::cin.ignore();
-
 #elif _WIN32
-
 	response = _getch();
-
 #else
-
 #endif
-
-	if (response == 'y')
-	{
+	if (response == 'y') {
 		cout << "\n Weights loaded\n";
-
 		read_weights_from_file();
 	}
-	else
-	{
+	else {
 		cout << "\n Weights overwritten\n";
 	}
-
 	cout << "\n Do you want to start learning\n";
-
 #ifdef __linux__
-
 	response = std::cin.get();
-
 	std::cin.ignore();
-
 #elif _WIN32
-
 	response = _getch();
-
 #else
-
 #endif
-
-	if (response == 'y')
-	{
+	if (response == 'y') {
 		cout << "\n Start to learning......\n";
-
 		std::cout << "Inserisci il valore per epsilon: ";
 		std::cin >> _epsilon;
-
 		apprendi();
 	}
-
 	lavora();
-
 	cout << "press a key..\n\n";
 }
 void init() {
@@ -258,40 +193,29 @@ void init() {
 		cout << "hidden_bias[" << i << "]" << "=" << hidden_bias[i] << "-BIAS" << "\n";
 	}
 	//-----------------------------------	console hidden values + output bias values
-
 	for (int i = 0; i < (numberOf_H); i++) {
 		//h[i] = 0.00f;
 		cout << "h[" << i << "]" << "=" << h[i] << "\n";
 	}
-
 	for (int i = 0; i < numberOf_Y; i++) {
 		cout << "output_bias[" << i << "]" << "=" << output_bias[i] << "-BIAS" << "\n";
 	}
 	//cout << "output elements initialization:\n\n";
 	//-----------------------------------	console output values
-	for (int i = 0; i < numberOf_Y; i++)
-	{
+	for (int i = 0; i < numberOf_Y; i++) {
 		//y[i] = 0.00f;
 		cout << "y[" << i << "]=" << y[i] << "\n";
 	}
-
 	//-----------------------------------	console W1 values
-
 	cout << "W1 elements initialization:\n\n";
-
-	for (int i = 0; i < numberOf_X; i++)
-	{
-		for (int k = 0; k < numberOf_H; k++)
-		{
+	for (int i = 0; i < numberOf_X; i++) {
+		for (int k = 0; k < numberOf_H; k++) {
 			W1[i][k] = dist(gen) * init_scale_input;
 			cout << "W1[" << i << "]" << "[" << k << "]" << "=" << W1[i][k] << "\n";
 		}
 	}
-
 	//-----------------------------------	console W2 values
-
-	for (int k = 0; k < numberOf_H; k++)
-	{
+	for (int k = 0; k < numberOf_H; k++) {
 		for (int j = 0; j < numberOf_Y; j++)
 		{
 			W2[k][j] = dist(gen) * init_scale_hidden;
@@ -340,8 +264,19 @@ void lavora() {
 			<< "\n y[5] = " << y[5] * 10.00f;
 	}
 }
-float err_min_rete = FLT_MAX;
-bool is_on_wtrite_file = false;
+void print_graph(const char* window_name, float ordinata, const char description_ordinata[20], float ascissa, const char description_ascissa[20]) {
+	ascissa1.push_back(ascissa);
+	ordinata1.push_back(ordinata);
+	/*char title_ordinata[30] = "epoca vs ";
+	size_t available = sizeof(title_ordinata) - strlen(title_ordinata) - 1;
+	errno_t err;
+	err = strncat_s(title_ordinata, sizeof(title_ordinata), description_ordinata, available);
+	if (err != 0) {
+		cout <<"Errore nella concatenazione: codice %d\n" << err;
+	}*/
+	PlotRenderer plot1(window_name, ascissa1, ordinata1, description_ascissa, description_ordinata, "Andamento Errore_rete");
+	open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
+}
 void apprendi() {
 	int cout_counter = 0;
 	auto start = std::chrono::system_clock::now();
@@ -349,54 +284,46 @@ void apprendi() {
 	float err_epoca_min_value = FLT_MAX;
 	do {
 		_err_epoca = 0.00f;
+		_max_single_traning_output_error_average = 0.00f;
+		uint16_t max_traning_sample_error = 0;
 		for (unsigned long p = 0; p < training_samples; p++) {
 			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
-		/*	x[0] = amps_training[p] ;
-			x[1] = watts_hour_training[p];*/
 			for (int i = 0; i < numberOf_Y; i++) {
 				d[i] = battery_out_training[p][i] / 10.00f;
 			}
 			forward();
 			back_propagate();
-			if (_err_rete > _err_epoca)
-			{
-				//cout << "ciclo: " << p << "  errore_rete= " << _err_rete << "\n";
-				_err_epoca = _err_rete;
+			if (_max_single_traning_output_error > _err_epoca) {
+				_err_epoca = _max_single_traning_output_error;
+				max_traning_sample_error = training_samples;
 			}
-
-			_epoca_index++;
-
+			_max_single_traning_output_error_average += _max_single_traning_output_error;
 		}
-		/*cout << "Analisi del grfico errori";
-		std::cin.get();*/
+		_epoca_index++;
 		cout_counter++;
 		is_on_wtrite_file = false;
-		if (cout_counter == 10000) {
-			std::cout << "\nepoca:" << _epoca_index <<
-				"\nerr_epoca=" << _err_epoca << "\n"
-				"epsilon=" << _epsilon << "\n";
-			/*ascissa1.push_back(_epoca_index);
-
-			ordinata1.push_back(_err_epoca);
-
-			PlotRenderer plot1("epoca vs err_epoca", ascissa1, ordinata1, "Epoca", "Err_rete", "Andamento Errore_rete");
-
-			open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());*/
+		if (cout_counter == 1000) {
+			_max_single_traning_output_error_average = _max_single_traning_output_error_average / training_samples;
+			cout << "epoca : " << _epoca_index << "\n\n";
+			cout << "media di max errore di traning : " << _max_single_traning_output_error_average << "\n\n";
+			cout << "max errore di traning : " << _err_epoca << "\n\n";
+			cout << "con epsilon : " << _epsilon << "\n\n";
+			cout << "max error on traning sample : " << max_traning_sample_error << "\n\n";
 			cout_counter = 0;
 			if ((err_epoca_min_value > _err_epoca) && _err_epoca > 0.00f) {
 				is_on_wtrite_file = true;
 				err_epoca_min_value = _err_epoca;
 			}
 		}
-		if (is_on_wtrite_file){
+		if (is_on_wtrite_file) {
 			std::time_t now = std::time(nullptr);
 			std::tm local_time;
 #ifdef __linux__
-			if (localtime_r(&now, &local_time) == nullptr){
+			if (localtime_r(&now, &local_time) == nullptr) {
 				std::cerr << "Errore nella conversione del tempo.\n";
 			}
-			else{
+			else {
 				// Stampa il tempo locale in formato leggibile
 				std::cout << "Anno: " << (1900 + local_time.tm_year) << "\n";
 				std::cout << "Mese: " << (1 + local_time.tm_mon) << "\n";
@@ -406,7 +333,7 @@ void apprendi() {
 				std::cout << "Secondi: " << local_time.tm_sec << "\n";
 			}
 #elif _WIN32
-			if (localtime_s(&local_time, &now) != 0){
+			if (localtime_s(&local_time, &now) != 0) {
 				std::cerr << "Errore nella conversione del tempo.\n";
 			}
 			/*global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
@@ -422,12 +349,12 @@ void apprendi() {
 				"\nlast modified date: " << global_time_recorded <<
 				"\nerr_epoca=" << _err_epoca <<
 				" min._err_epoca= " << err_epoca_min_value <<
-				" _err_rete=" << _err_rete <<
-				" min._err_rete= " << err_min_rete <<
+				" _max_single_traning_output_error=" << _max_single_traning_output_error <<
+				" min._max_single_traning_output_error= " << err_min_rete <<
 				"\n";*/
 #else
 #endif
-			err_min_rete = _err_rete;
+			err_min_rete = _max_single_traning_output_error;
 			std::cout << "\nwrite on file\n";
 			write_weights_on_file();
 		}
@@ -446,15 +373,11 @@ void apprendi() {
 	Beep(3000, 200);
 #else
 #endif
-
-
-
 #ifdef __linux__
 	getchar();
 #elif _WIN32
 	_getch();
 #else
-
 #endif
 }
 void forward() {
@@ -480,16 +403,15 @@ void forward() {
 void back_propagate() {
 	float err_H[numberOf_H] = { 0.0f };
 	float delta = 0.0f;
-	_err_rete = 0.0f;
-
+	_max_single_traning_output_error = 0.00f;
 	// Calcolo del delta per il layer di output (attivazione lineare -> derivata = 1)
+	float single_training_output_error = 0.00f;
 	for (int j = 0; j < numberOf_Y; j++) {
-		float error = d[j] - y[j];
-		if (fabs(error) > _err_rete) {  // Usare fabs() per float
-			_err_rete = fabs(error);
+		single_training_output_error = d[j] - y[j];
+		if (fabs(single_training_output_error) > _max_single_traning_output_error) {  // Usare fabs() per float
+			_max_single_traning_output_error = fabs(single_training_output_error);
 		}
-		delta = error;  // Derivata del layer output lineare è 1
-
+		delta = single_training_output_error;  // Derivata del layer output lineare è 1
 		// Aggiornamento dei pesi del layer di output e accumulo dell'errore per il layer nascosto
 		for (int k = 0; k < numberOf_H; k++) {
 			W2[k][j] += (_epsilon * delta * h[k]);
@@ -498,13 +420,11 @@ void back_propagate() {
 		// Aggiornamento del bias per il layer di output
 		output_bias[j] += _epsilon * delta;
 	}
-
 	// Calcolo del delta per il layer nascosto usando la derivata della ReLU
 	for (int k = 0; k < numberOf_H; k++) {
 		// Derivata della ReLU: 1 se il neurone è attivo (h[k] > 0), 0 altrimenti
 		float relu_deriv = (h[k] > 0.0f) ? 1.0f : 0.0f;
 		delta = err_H[k] * relu_deriv;
-
 		// Aggiornamento dei pesi del layer nascosto
 		for (int i = 0; i < numberOf_X; i++) {
 			W1[i][k] += (_epsilon * delta * x[i]);
@@ -513,7 +433,6 @@ void back_propagate() {
 		hidden_bias[k] += _epsilon * delta;
 	}
 }
-
 double get_random_number_from_xavier()
 {
 	uniform_real_distribution<double> distribution(_lower_bound_xavier, _upper_bound_xavier);
@@ -522,13 +441,13 @@ double get_random_number_from_xavier()
 
 	return random_value;
 }
-void read_samples_from_file_diagram_battery(){
+void read_samples_from_file_diagram_battery() {
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
 	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";//"72V_Battery.CSV";
 	// Apertura del file
 	std::ifstream file(filename);
 	// Verifica se il file è stato aperto correttamente
-	if (!file.is_open()){
+	if (!file.is_open()) {
 		std::cerr << "Errore nell'apertura del file " << filename << std::endl;
 	}
 	std::string line;
@@ -537,16 +456,15 @@ void read_samples_from_file_diagram_battery(){
 	int training_row_pre_index = 0;
 	std::string item;
 	stringstream ss1;
-	while (!file.eof()){
+	while (!file.eof()) {
 		training_row_pre_index = training_row_index++;
-		switch (training_row_pre_index){
+		switch (training_row_pre_index) {
 		case 0:
 		case 1:
 		case 2:
 		case 3:
 		case 4:
 		case 5:
-			try{
 				std::getline(file, line);
 				ss1.str(line);
 				std::getline(ss1, item, ';');
@@ -554,11 +472,9 @@ void read_samples_from_file_diagram_battery(){
 				std::getline(ss1, item, ';');
 				battery_out_training[training_block_index][training_row_pre_index] = std::stod(item);
 				cout << "battery[" << training_block_index << "]" << "[" << training_row_pre_index << "] = " << battery_out_training[training_block_index][training_row_pre_index] << "\n";
-			}
-			catch (...) {};
 			break;
 		case 6:
-			try{
+			
 				std::getline(file, line);
 				ss1.str(line);
 				std::getline(ss1, item, ';');
@@ -566,12 +482,11 @@ void read_samples_from_file_diagram_battery(){
 				std::getline(ss1, item, ';');
 				watts_hour_training[training_block_index] = std::stod(item);
 				cout << "Watts/hour[" << training_block_index << "] = " << watts_hour_training[training_block_index] << "\n";
-			}
-			catch (...) {};
+	
+			
 			break;
 		case 7:
-			try
-			{
+		
 				std::getline(file, line);
 
 				ss1.str(line);
@@ -585,8 +500,7 @@ void read_samples_from_file_diagram_battery(){
 				amps_training[training_block_index] = std::stod(item);
 
 				cout << "Ampere[" << training_block_index << "] = " << amps_training[training_block_index] << "\n";
-			}
-			catch (...) {};
+			
 			break;
 		default:
 			training_block_index++;
@@ -599,8 +513,8 @@ void read_samples_from_file_diagram_battery(){
 	//system("pause");
 #else
 #endif
-	if (training_block_index != training_samples)
-	{
+
+	if ((training_block_index) + 1 != training_samples){
 		cout << "\n\nALLERT!!!!!!! training sample different to index = \t" << training_block_index << "\n";
 #ifdef __linux__
 
@@ -622,47 +536,46 @@ void read_samples_from_file_diagram_battery(){
 	}
 	file.close();
 }
-void read_weights_from_file(){
+void read_weights_from_file() {
 	std::ifstream in(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
-	if (in.good()){
-		for (int i = 0; i < numberOf_X; i++){
-			for (int k = 0; k < numberOf_H; k++){
+	if (in.good()) {
+		for (int i = 0; i < numberOf_X; i++) {
+			for (int k = 0; k < numberOf_H; k++) {
 				in.read((char*)&W1[i][k], sizeof(float));
 			}
 		}
-		for (int j = 0; j < numberOf_Y; j++){
-			for (int k = 0; k < numberOf_H; k++){
+		for (int j = 0; j < numberOf_Y; j++) {
+			for (int k = 0; k < numberOf_H; k++) {
 				in.read((char*)&W2[k][j], sizeof(float));
 			}
 		}
-		for (int k = 0; k < numberOf_H; k++){
+		for (int k = 0; k < numberOf_H; k++) {
 			in.read((char*)&hidden_bias[k], sizeof(float));
 		}
-		for (int j = 0; j < numberOf_Y; j++){
+		for (int j = 0; j < numberOf_Y; j++) {
 			in.read((char*)&output_bias[j], sizeof(float));
 		}
 		//in.read((char*)&x[numberOf_X - 1], sizeof(float));
 		//in.read((char*)&h[numberOf_H - 1], sizeof(float));
 	}
 }
-void write_weights_on_file(){
-	try{
+void write_weights_on_file() {
 		std::ofstream fw(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
-		if (fw.good()){
-			for (int i = 0; i < numberOf_X; i++){
-				for (int k = 0; k < numberOf_H; k++){
+		if (fw.good()) {
+			for (int i = 0; i < numberOf_X; i++) {
+				for (int k = 0; k < numberOf_H; k++) {
 					fw.write((char*)&W1[i][k], sizeof(float));
 				}
 			}
-			for (int j = 0; j < numberOf_Y; j++){
-				for (int k = 0; k < numberOf_H; k++){
+			for (int j = 0; j < numberOf_Y; j++) {
+				for (int k = 0; k < numberOf_H; k++) {
 					fw.write((char*)&W2[k][j], sizeof(float));
 				}
 			}
-			for (int k = 0; k < numberOf_H; k++){
+			for (int k = 0; k < numberOf_H; k++) {
 				fw.write((char*)&hidden_bias[k], sizeof(float));
 			}
-			for (int j = 0; j < numberOf_Y; j++){
+			for (int j = 0; j < numberOf_Y; j++) {
 				fw.write((char*)&output_bias[j], sizeof(float));
 			}
 			fw.write((char*)&_err_epoca, sizeof(float));
@@ -670,13 +583,8 @@ void write_weights_on_file(){
 			//fw.write((char*)&h[numberOf_H - 1], sizeof(float));
 			fw.close();
 			//cout << "\nFile closed... \n\n";
-		}
-		else
+		}else
 			cout << "Problem with opening file";
-	}
-	catch (const char* msg){
-		cerr << msg << endl;
-	}
 }
 
 

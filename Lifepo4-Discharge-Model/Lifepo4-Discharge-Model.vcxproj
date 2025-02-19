@@ -19,11 +19,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lifepo4-Discharge-Model.cpp" />
-    <ClCompile Include="plot_renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="72V-Battery-S11\72V_Battery.CSV" />
-    <None Include="72V-Battery-S11\model.bin" />
+    <None Include="72V-Battery-S11\model.hex" />
     <None Include="72V-Battery-S11\test.csv" />
     <None Include="72V-Battery-S12\72V_Battery.CSV" />
     <None Include="72V-Battery-S12\model.bin" />

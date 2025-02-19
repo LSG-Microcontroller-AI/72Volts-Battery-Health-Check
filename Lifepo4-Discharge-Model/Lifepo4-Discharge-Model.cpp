@@ -11,11 +11,11 @@ using namespace std;
 #include <fstream>
 #include <cfloat>
 #include <random>
-#include "imgui.h"
-#include "implot.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include <GLFW/glfw3.h>
+//#include "imgui.h"
+//#include "implot.h"
+//#include "imgui_impl_glfw.h"
+//#include "imgui_impl_opengl3.h"
+//#include <GLFW/glfw3.h>
 #include <vector>
 #include "plot_renderer.h"
 #ifdef __linux__
@@ -26,7 +26,6 @@ using namespace std;
 #endif
 void init();
 void lavora();
-double get_random_number_from_xavier();
 void forward();
 void apprendi();
 void back_propagate();
@@ -35,7 +34,7 @@ void write_weights_on_file();
 void read_samples_from_file_diagram_battery();
 float _err_epoca;
 float _max_single_traning_output_error = 0.00f;
-float _err_amm = 0.0089f;
+float _err_amm = 0.009f;
 float _epsilon = 0.00001f;
 uint16_t const training_samples = 100;
 const uint8_t numberOf_X = 2;
@@ -43,8 +42,6 @@ const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
-double _lower_bound_xavier;
-double _upper_bound_xavier;
 float W1[numberOf_X][numberOf_H] = { 0.00 };
 float W2[numberOf_H][numberOf_Y] = { 0.00 };
 float x[numberOf_X] = { 0.00 };
@@ -57,7 +54,7 @@ float battery_out_training[training_samples][numberOf_Y]{};
 string global_time_recorded;
 default_random_engine generator(time(0));
 const string _relative_files_path = "72V-Battery-S11";
-GLFWwindow* window;
+//GLFWwindow* window;
 std::vector<double> ascissa1;
 std::vector<double> ascissa2;
 std::vector<double> ascissa3;
@@ -75,51 +72,51 @@ float relu(float x) {
 	return (x > 0) ? x : 0;
 }
 // Derivata della funzione ReLU
-GLFWwindow* InitWindow() {
-	if (!glfwInit()) {
-		return nullptr;
-	}
-	// Abilita l'hint per una finestra massimizzata
-	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-	// Crea la finestra con dimensioni standard
-	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
-	if (!window) {
-		glfwTerminate();
-		return nullptr;
-	}
-	// Ora massimizziamo la finestra dopo la creazione
-	glfwMaximizeWindow(window);
-	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1);
-	// Inizializzazione ImGui + ImPlot
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImPlot::CreateContext();
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init("#version 130");
-	return window;
-}
-void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, PlotRenderer plot4) {
-	glfwPollEvents();
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-	plot1.Begin();
-	plot2.Begin();
-	plot3.Begin();
-	plot4.Begin();
-	ImGui::Render();
-	int display_w, display_h;
-	glfwGetFramebufferSize(window, &display_w, &display_h);
-	glViewport(0, 0, display_w, display_h);
-	glClear(GL_COLOR_BUFFER_BIT);
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	glfwSwapBuffers(window);
-	GLenum err;
-	while ((err = glGetError()) != GL_NO_ERROR) {
-		std::cout << "Errore OpenGL: " << err << std::endl;
-	}
-}
+//GLFWwindow* InitWindow() {
+//	if (!glfwInit()) {
+//		return nullptr;
+//	}
+//	// Abilita l'hint per una finestra massimizzata
+//	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+//	// Crea la finestra con dimensioni standard
+//	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
+//	if (!window) {
+//		glfwTerminate();
+//		return nullptr;
+//	}
+//	// Ora massimizziamo la finestra dopo la creazione
+//	glfwMaximizeWindow(window);
+//	glfwMakeContextCurrent(window);
+//	glfwSwapInterval(1);
+//	// Inizializzazione ImGui + ImPlot
+//	IMGUI_CHECKVERSION();
+//	ImGui::CreateContext();
+//	ImPlot::CreateContext();
+//	ImGui_ImplGlfw_InitForOpenGL(window, true);
+//	ImGui_ImplOpenGL3_Init("#version 130");
+//	return window;
+//}
+//void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, PlotRenderer plot4) {
+//	glfwPollEvents();
+//	ImGui_ImplOpenGL3_NewFrame();
+//	ImGui_ImplGlfw_NewFrame();
+//	ImGui::NewFrame();
+//	plot1.Begin();
+//	plot2.Begin();
+//	plot3.Begin();
+//	plot4.Begin();
+//	ImGui::Render();
+//	int display_w, display_h;
+//	glfwGetFramebufferSize(window, &display_w, &display_h);
+//	glViewport(0, 0, display_w, display_h);
+//	glClear(GL_COLOR_BUFFER_BIT);
+//	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+//	glfwSwapBuffers(window);
+//	GLenum err;
+//	while ((err = glGetError()) != GL_NO_ERROR) {
+//		std::cout << "Errore OpenGL: " << err << std::endl;
+//	}
+//}
 int main() {
 	//window = InitWindow();
 #ifdef __linux__
@@ -145,6 +142,7 @@ int main() {
 	response = _getch();
 #endif
 	if (response == 'e') {
+		read_weights_from_file();
 		lavora();
 	}
 	if (response == 'c') {
@@ -232,11 +230,11 @@ void lavora() {
 		std::cout << "\nHai inserito:\n";
 		std::cout << "x[0] (Ampere) = " << x[0] << "\n";
 		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";
-		x[0] = log(x[0] + 1.0f) / 10.0f;
-		x[1] = log(x[1] + 1.0f) / 10.0f;
+		x[0] = log(x[0] + 1.00f) / 10.00f;
+		x[1] = log(x[1] + 1.00f) / 10.00f;
 		forward();
 		// Stampa dei risultati
-		std::cout << "\n x[0] = " << exp(x[0] * 10) << " x[1] = " << exp(x[1] * 10) << "\n"
+		std::cout << "\n x[0] = " << exp(x[0] * 10.00f) << " x[1] = " << exp(x[1] * 10.00f) << "\n"
 			<< "\n y[0] = " << y[0] * 10.00f
 			<< "\n y[1] = " << y[1] * 10.00f
 			<< "\n y[2] = " << y[2] * 10.00f
@@ -245,19 +243,19 @@ void lavora() {
 			<< "\n y[5] = " << y[5] * 10.00f;
 	}
 }
-void print_graph(const char* window_name, float ordinata, const char description_ordinata[20], float ascissa, const char description_ascissa[20]) {
-	ascissa1.push_back(ascissa);
-	ordinata1.push_back(ordinata);
-	/*char title_ordinata[30] = "epoca vs ";
-	size_t available = sizeof(title_ordinata) - strlen(title_ordinata) - 1;
-	errno_t err;
-	err = strncat_s(title_ordinata, sizeof(title_ordinata), description_ordinata, available);
-	if (err != 0) {
-		cout <<"Errore nella concatenazione: codice %d\n" << err;
-	}*/
-	PlotRenderer plot1(window_name, ascissa1, ordinata1, description_ascissa, description_ordinata, "Andamento Errore_rete");
-	open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
-}
+//void print_graph(const char* window_name, float ordinata, const char description_ordinata[20], float ascissa, const char description_ascissa[20]) {
+//	ascissa1.push_back(ascissa);
+//	ordinata1.push_back(ordinata);
+//	/*char title_ordinata[30] = "epoca vs ";
+//	size_t available = sizeof(title_ordinata) - strlen(title_ordinata) - 1;
+//	errno_t err;
+//	err = strncat_s(title_ordinata, sizeof(title_ordinata), description_ordinata, available);
+//	if (err != 0) {
+//		cout <<"Errore nella concatenazione: codice %d\n" << err;
+//	}*/
+//	PlotRenderer plot1(window_name, ascissa1, ordinata1, description_ascissa, description_ordinata, "Andamento Errore_rete");
+//	open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
+//}
 void apprendi() {
 	int cout_counter = 0;
 	auto start = std::chrono::system_clock::now();
@@ -486,7 +484,7 @@ void read_samples_from_file_diagram_battery() {
 	file.close();
 }
 void read_weights_from_file() {
-	std::ifstream in(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
+	std::ifstream in(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
 	if (in.good()) {
 		for (int i = 0; i < numberOf_X; i++) {
 			for (int k = 0; k < numberOf_H; k++) {
@@ -509,7 +507,7 @@ void read_weights_from_file() {
 	}
 }
 void write_weights_on_file() {
-		std::ofstream fw(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
+		std::ofstream fw(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
 		if (fw.good()) {
 			for (int i = 0; i < numberOf_X; i++) {
 				for (int k = 0; k < numberOf_H; k++) {
@@ -535,6 +533,7 @@ void write_weights_on_file() {
 		}else
 			cout << "Problem with opening file";
 }
+
 
 
 

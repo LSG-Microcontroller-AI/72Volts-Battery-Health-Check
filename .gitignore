@@ -36,3 +36,6 @@ Lifepo4-Discharge-Model/x64/
 Lifepo4-Discharge-Model/Debug/
 x64/
 SampleGenerator/Bin/
+AI_battery_analyser/obj/x86/
+AI_battery_analyser/__vm/
+AdditionWithRelu/Debug/

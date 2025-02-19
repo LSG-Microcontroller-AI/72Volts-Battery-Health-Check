@@ -2,7 +2,6 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Lifepo4-Discharge-Model.cpp" />
-    <ClCompile Include="plot_renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="battery-S11-72V">
@@ -16,7 +15,7 @@
     <None Include="72V-Battery-S11\72V_Battery.CSV">
       <Filter>battery-S11-72V</Filter>
     </None>
-    <None Include="72V-Battery-S11\model.bin">
+    <None Include="72V-Battery-S11\model.hex">
       <Filter>battery-S11-72V</Filter>
     </None>
     <None Include="72V-Battery-S12\72V_Battery.CSV">

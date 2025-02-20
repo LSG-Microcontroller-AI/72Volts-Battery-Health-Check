@@ -4,10 +4,13 @@
  Author:	luigi.santagada
 */
 #include <Arduino.h>
-#ifndef RAMSTART
-extern int __data_start;
-#endif
-extern int __bss_end;
+#include <SoftWareSerial.h>
+//#ifndef RAMSTART
+//extern int __data_start;
+//#endif
+//extern int __bss_end;
+//extern void* __brkval;
+extern char __heap_start;
 extern void* __brkval;
 #include <EEPROM.h>
 const uint8_t numberOf_X = 2;
@@ -23,8 +26,15 @@ float x[numberOf_X] = { 0.00 };
 float h[numberOf_H] = { 0.00 };
 float y[numberOf_Y] = { 0.00f };
 float processed_data[6] = { 0.00 };
+const int headerSize = 2;
+const uint8_t numFloats = 8;
+const uint8_t dataSize = numFloats * sizeof(float);
+const uint8_t checksumSize = sizeof(float);
+const uint8_t footerSize = 1;
+const uint8_t packetSize = headerSize + dataSize + checksumSize + footerSize; // 39 bytes
 void read_weights_from_eeprom();
 // the setup function runs once when you press reset or power the board
+SoftwareSerial mySerial(10, 11); // Definizione: RX, TX
 void setup() {
 	Serial.begin(9600);
 	read_weights_from_eeprom();
@@ -36,9 +46,11 @@ void setup() {
 	processed_data[3] = 1.90f;
 	processed_data[4] = 1.85f;
 	processed_data[5] = 1.93f;
+
 }
 // the loop function runs over and over again until power down or reset
 void loop() {
+	simulateTransmission();
 	int ram_libera = freeMemory();
 	Serial.print(F("RAM libera: "));
 	Serial.print(ram_libera);
@@ -48,7 +60,7 @@ void loop() {
 	x[0] = log(x[0] + 1.0f) / 10.0f;
 	x[1] = log(x[1] + 1.0f) / 10.0f;
 	forward();
-	print_model_data();
+	//print_model_data();
 	normalizeArray(processed_data, y_normalized_real_data, numberOf_Y);
 	normalizeArray(y, y_normalized_model_data, numberOf_Y);
 	float mse = meanSquaredError(y_normalized_real_data, y_normalized_model_data, numberOf_Y);
@@ -56,8 +68,10 @@ void loop() {
 	uint8_t percentage = calculateErrorPercentage(mse, overall_mean);
 	Serial.println(percentage);
 	Serial.println(mse, 10);
-	print_normalizer_processed_data();
-	print_normalizer_model_data();
+	float varianza = calculateVariance(y_normalized_real_data, numberOf_Y);
+	Serial.println(varianza);
+	//print_normalizer_processed_data();
+	//print_normalizer_model_data();
 	delay(2000);
 }
 void print_model_data(){
@@ -184,13 +198,101 @@ uint8_t calculateErrorPercentage(float mse, float overallMean) {
 	uint8_t errorPercentage = (rms / overallMean) * 100.0f;
 	return errorPercentage;
 }
-int freeMemory() {
-	int free_memory;
-	if ((int)__brkval == 0) {
-		free_memory = ((int)&free_memory) - ((int)&__bss_end);
+float calculateVariance(const float* data, int size) {
+	// Calcolo della media
+	float sum = 0.0f;
+	for (int i = 0; i < size; ++i) {
+		sum += data[i];
 	}
-	else {
-		free_memory = ((int)&free_memory) - ((int)__brkval);
+	float mean = sum / size;
+	// Calcolo della somma dei quadrati delle differenze
+	float sumSquaredDifferences = 0.0f;
+	for (int i = 0; i < size; ++i) {
+		float diff = data[i] - mean;
+		sumSquaredDifferences += diff * diff;
 	}
-	return free_memory;
+	// La varianza (per popolazione) è la media dei quadrati delle differenze
+	return sumSquaredDifferences / size;
+}
+// Funzione per calcolare il checksum (somma dei float)
+float computeChecksum(const float* data, int count) {
+	float sum = 0.0f;
+	for (int i = 0; i < count; i++) {
+		sum += data[i];
+	}
+	return sum;
+}
+
+// Processa un flusso di byte alla ricerca di pacchetti validi.
+// Per ogni pacchetto trovato, controlla marker, checksum e stampa i dati.
+// Costruisce un pacchetto nel buffer "packet" con i float forniti.
+// Se "correctChecksum" è false, il checksum viene volutamente alterato.
+// Scansiona un flusso di byte alla ricerca di pacchetti validi.
+// Per ogni pacchetto trovato, controlla marker, footer e checksum.
+void processDataStream(const byte* stream, int streamSize) {
+	int i = 0;
+	while (i <= streamSize - packetSize) {
+		if (stream[i] == 0xAA && stream[i + 1] == 0xBB && stream[i + packetSize - 1] == 0xCC) {
+			float values[numFloats];
+			memcpy(values, stream + i + headerSize, dataSize);
+			float transmittedChecksum;
+			memcpy(& transmittedChecksum, stream + i + headerSize + dataSize, checksumSize);
+			float computedChecksum = computeChecksum(values, numFloats);
+			if (fabs(transmittedChecksum - computedChecksum) < 0.0001f) {
+				Serial.print("Packet valido trovato a indice ");
+				Serial.println(i);
+				for (int j = 0; j < numFloats; j++) {
+					Serial.print(F("Value "));
+					Serial.print(j);
+					Serial.print(F(": "));
+					Serial.println(values[j]);
+				}
+			}
+			else {
+				Serial.print(F("Packet NON valido (checksum errato) a indice "));
+				Serial.println(i);
+			}
+			i += packetSize; // Salta il pacchetto trovato
+		}
+		else {
+			i++;
+		}
+	}
+}
+void simulateTransmission() {
+	const int streamSize = 150;
+	byte dataStream[streamSize];
+	memset(dataStream, 0x00, streamSize);
+	float packetValues1[numFloats] = { 1.1f, 2.2f, 3.3f, 4.4f, 5.5f, 6.6f, 7.7f, 8.8f };
+	buildPacket(dataStream + 10, packetValues1, true);
+	//float packetValues2[numFloats] = { 9.1f, 10.2f, 11.3f, 12.4f, 13.5f, 14.6f, 15.7f, 16.8f };
+	//buildPacket(dataStream + 60, packetValues2, false);
+	//float packetValues3[numFloats] = { 17.1f, 18.2f, 19.3f, 20.4f, 21.5f, 22.6f, 23.7f, 24.8f };
+	//buildPacket(dataStream + 110, packetValues3, true);
+	processDataStream(dataStream, streamSize);
+}
+void buildPacket(byte* packet, const float* values, bool correctChecksum) {
+	packet[0] = 0xAA;
+	packet[1] = 0xBB;
+	memcpy(packet + headerSize, values, dataSize);
+	float checksum = computeChecksum(values, numFloats);
+	if (!correctChecksum) {
+		checksum += 1.0f;  // Corrompe il checksum
+	}
+	memcpy(packet + headerSize + dataSize, &checksum, checksumSize);
+	packet[packetSize - 1] = 0xCC;
+}
+//int freeMemory2() {
+//	int free_memory;
+//	if ((int)__brkval == 0) {
+//		free_memory = ((int)&free_memory) - ((int)&__bss_end);
+//	}
+//	else {
+//		free_memory = ((int)&free_memory) - ((int)__brkval);
+//	}
+//	return free_memory;
+//}
+unsigned int freeMemory() {
+	char top;
+	return (unsigned int)&top - (unsigned int)(__brkval == 0 ? &__heap_start : __brkval);
 }

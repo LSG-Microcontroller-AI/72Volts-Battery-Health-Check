@@ -370,8 +370,8 @@ void forward() {
 	}
 }
 void back_propagate() {
-	float err_H[numberOf_H] = { 0.0f };
-	float delta = 0.0f;
+	float err_H[numberOf_H] = { 0.00f };
+	float delta = 0.00f;
 	_max_single_traning_output_error = 0.00f;
 	// Calcolo del delta per il layer di output (attivazione lineare -> derivata = 1)
 	float single_training_output_error = 0.00f;

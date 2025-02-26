@@ -1,10 +1,10 @@
-﻿/*
+/*
  Name:		AI_battery_analyser.ino
  Created:	2/18/2025 12:52:20 PM
  Author:	luigi.santagada
 */
 #include <Arduino.h>
-#include <SoftWareSerial.h>
+#include <SoftwareSerial.h>
 //#ifndef RAMSTART
 //extern int __data_start;
 //#endif

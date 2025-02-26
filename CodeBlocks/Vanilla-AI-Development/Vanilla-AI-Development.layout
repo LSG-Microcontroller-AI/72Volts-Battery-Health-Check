@@ -2,86 +2,9 @@
 <CodeBlocks_layout_file>
 	<FileVersion major="1" minor="0" />
 	<ActiveTarget name="Debug" />
-	<File name="..\..\Lifepo4-Discharge-Model\Lifepo4-Discharge-Model.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="6" zoom_2="0">
+	<File name="../../Lifepo4-Discharge-Model/Lifepo4-Discharge-Model.cpp" open="1" top="1" tabpos="1" split="0" active="1" splitpos="0" zoom_1="6" zoom_2="0">
 		<Cursor>
-			<Cursor1 position="2138" topLine="65" />
+			<Cursor1 position="4627" topLine="59" />
 		</Cursor>
-		<Folding>
-			<Collapse line="73" />
-			<Collapse line="76" />
-			<Collapse line="100" />
-			<Collapse line="117" />
-			<Collapse line="121" />
-			<Collapse line="172" />
-			<Collapse line="178" />
-			<Collapse line="199" />
-			<Collapse line="212" />
-			<Collapse line="219" />
-			<Collapse line="222" />
-			<Collapse line="227" />
-			<Collapse line="231" />
-			<Collapse line="236" />
-			<Collapse line="241" />
-			<Collapse line="247" />
-			<Collapse line="257" />
-			<Collapse line="259" />
-			<Collapse line="268" />
-			<Collapse line="270" />
-			<Collapse line="277" />
-			<Collapse line="278" />
-			<Collapse line="317" />
-			<Collapse line="322" />
-			<Collapse line="324" />
-			<Collapse line="327" />
-			<Collapse line="333" />
-			<Collapse line="341" />
-			<Collapse line="345" />
-			<Collapse line="349" />
-			<Collapse line="357" />
-			<Collapse line="362" />
-			<Collapse line="366" />
-			<Collapse line="369" />
-			<Collapse line="379" />
-			<Collapse line="382" />
-			<Collapse line="430" />
-			<Collapse line="431" />
-			<Collapse line="433" />
-			<Collapse line="440" />
-			<Collapse line="442" />
-			<Collapse line="450" />
-			<Collapse line="455" />
-			<Collapse line="457" />
-			<Collapse line="462" />
-			<Collapse line="470" />
-			<Collapse line="475" />
-			<Collapse line="482" />
-			<Collapse line="487" />
-			<Collapse line="493" />
-			<Collapse line="502" />
-			<Collapse line="504" />
-			<Collapse line="511" />
-			<Collapse line="523" />
-			<Collapse line="535" />
-			<Collapse line="557" />
-			<Collapse line="565" />
-			<Collapse line="575" />
-			<Collapse line="577" />
-			<Collapse line="578" />
-			<Collapse line="579" />
-			<Collapse line="583" />
-			<Collapse line="584" />
-			<Collapse line="588" />
-			<Collapse line="591" />
-			<Collapse line="596" />
-			<Collapse line="597" />
-			<Collapse line="599" />
-			<Collapse line="600" />
-			<Collapse line="601" />
-			<Collapse line="605" />
-			<Collapse line="606" />
-			<Collapse line="610" />
-			<Collapse line="613" />
-			<Collapse line="621" />
-		</Folding>
 	</File>
 </CodeBlocks_layout_file>

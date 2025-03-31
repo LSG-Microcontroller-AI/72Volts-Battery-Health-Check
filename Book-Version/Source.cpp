@@ -27,8 +27,8 @@ float sigmoid_activation(float A);
 float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.00025f;
-float _epsilon = 0.10f;
-uint16_t const training_samples = 101;
+float _epsilon = 0.01f;
+uint16_t const training_samples = 96;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 10;
 const uint8_t numberOf_Y = 6;
@@ -45,10 +45,10 @@ float d[numberOf_Y] = { 0.00 };
 float amps_training[training_samples]{};
 float watts_hour_training[training_samples]{};
 float battery_out_training[training_samples][numberOf_Y]{};
+int max_error_file_index_line = 0;
 string global_time_recorded;
 default_random_engine generator(time(0));
 const string _relative_files_path = "72V-Battery-S11";
-int _epoca_index = 0;
 float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 int main() {
@@ -64,7 +64,6 @@ int main() {
 #endif
 	if (response == 'y') {
 		cout << "\n Weights loaded\n";
-
 		read_weights_from_file();
 	}
 	else {
@@ -169,12 +168,19 @@ void lavora() {
 	}
 }
 void apprendi() {
+	int _epoca_index = 0;
 	int cout_counter = 0;
 	auto start = std::chrono::system_clock::now();
 	read_samples_from_file_diagram_battery();
 	float err_epoca_min_value = FLT_MAX;
+	float average_err_rete = 0.00f;
+	float varianza_err_rete = 0.00f;
+	float deviazione_std = 0.00f;
+	float listOfErr_rete[training_samples] = { 0.00f };
 	do {
 		_err_epoca = 0.00f;
+		average_err_rete = 0.00f;
+		varianza_err_rete = 0.00f;
 		for (unsigned long p = 0; p < training_samples; p++) {
 			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
@@ -185,15 +191,28 @@ void apprendi() {
 			back_propagate();
 			if (_err_rete > _err_epoca) {
 				_err_epoca = _err_rete;
+				max_error_file_index_line = ((p) * 8) + 1;
 			}
-			_epoca_index++;
+			listOfErr_rete[p] = _err_rete;
+			average_err_rete += _err_rete;
 		}
+		_epoca_index = _epoca_index + 1;
+		average_err_rete /= training_samples;
+		for (unsigned long p = 0; p < training_samples; p++) {
+			varianza_err_rete += pow(listOfErr_rete[p] - average_err_rete, 2);
+		}
+		varianza_err_rete /= training_samples;
+		deviazione_std = sqrt(varianza_err_rete);
 		cout_counter++;
 		is_on_wtrite_file = false;
-		if (cout_counter == 100000) {
+		if (cout_counter == 10000) {
 			std::cout << "\nepoca:" << _epoca_index <<
-				"\nerr_epoca=" << _err_epoca << "\n"
-				"epsilon=" << _epsilon << "\n";
+				"\nerr_epoca=" << _err_epoca << 
+				"\nvarianza di errore di rete = " << varianza_err_rete <<
+				"\nmedia di errore di rete = " << average_err_rete << 
+				"\ndeviazione standard errore di rete = " << deviazione_std << 
+				"\nmax err_epoca is on sample line = " << max_error_file_index_line <<
+				"\nepsilon=" << _epsilon << "\n";
 			cout_counter = 0;
 			if (err_epoca_min_value > _err_epoca) {
 				is_on_wtrite_file = true;
@@ -203,8 +222,11 @@ void apprendi() {
 		if (is_on_wtrite_file) {
 			std::time_t now = std::time(nullptr);
 			std::tm local_time;
+			localtime_s(&local_time, &now);
+			char timeStr[9]; 
+			std::strftime(timeStr, sizeof(timeStr), "%H:%M:%S", &local_time);
 			err_min_rete = _err_rete;
-			std::cout << "\nwrite on file\n";
+			std::cout << "\nwrite on file in ora " << timeStr << "\n";
 			write_weights_on_file();
 		}
 	} while (_err_epoca > _err_amm);
@@ -284,12 +306,7 @@ void read_samples_from_file_diagram_battery() {
 	while (!file.eof()) {
 		training_row_pre_index = training_row_index++;
 		switch (training_row_pre_index) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
+		case 0:case 1:case 2:case 3:case 4:case 5:
 			try {
 				std::getline(file, line);
 				ss1.str(line);
@@ -300,7 +317,7 @@ void read_samples_from_file_diagram_battery() {
 				cout << "battery[" << training_block_index << "]" << "[" << training_row_pre_index << "] = " << battery_out_training[training_block_index][training_row_pre_index] << "\n";
 			}
 			catch (...) {
-				cout << "--------------------------errore in lettura file";
+				cout << "Errore in lettura file";
 			};
 			break;
 		case 6:
@@ -314,7 +331,7 @@ void read_samples_from_file_diagram_battery() {
 				cout << "Watts/hour[" << training_block_index << "] = " << watts_hour_training[training_block_index] << "\n";
 			}
 			catch (...) {
-				cout << "----------------------------------errore in lettura file";
+				cout << "Errore in lettura file";
 			};
 			break;
 		case 7:
@@ -328,7 +345,7 @@ void read_samples_from_file_diagram_battery() {
 				cout << "Ampere[" << training_block_index << "] = " << amps_training[training_block_index] << "\n";
 			}
 			catch (...) {
-				cout << "-------------------------------------------errore in lettura file";
+				cout << "Rrrore in lettura file";
 			};
 			break;
 		default:

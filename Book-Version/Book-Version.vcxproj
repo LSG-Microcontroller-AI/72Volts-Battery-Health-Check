@@ -25,6 +25,9 @@
     <None Include="72V-Battery-S11\72V_Battery.CSV" />
     <None Include="72V-Battery-S11\model.bin" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="Text.txt" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>

@@ -24,11 +24,12 @@ void read_weights_from_file();
 void write_weights_on_file();
 void read_samples_from_file_diagram_battery();
 float sigmoid_activation(float A);
+void setTime();
 float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.00025f;
-float _epsilon = 0.01f;
-uint16_t const training_samples = 96;
+float _epsilon = 0.00f;
+int const training_samples = 345;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 10;
 const uint8_t numberOf_Y = 6;
@@ -46,10 +47,10 @@ float amps_training[training_samples]{};
 float watts_hour_training[training_samples]{};
 float battery_out_training[training_samples][numberOf_Y]{};
 int max_error_file_index_line = 0;
-string global_time_recorded;
+char timeStr[9] = {0};
+float _err_epoca_min_value = FLT_MAX;
 default_random_engine generator(time(0));
 const string _relative_files_path = "72V-Battery-S11";
-float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 int main() {
 	init();
@@ -78,8 +79,11 @@ int main() {
 #else
 #endif
 	if (response == 'y') {
-		cout << "\n Start to learning......\n";
-		std::cout << "Inserisci il valore per epsilon: ";
+		cout << "\n Start to learning......";
+		if (_epsilon != 0.00f) {
+			std::cout << "\nultimo valore usato per epsilon è stato : " << _epsilon ;
+		}
+		std::cout << "\nInserisci nuovo valore per epsilon : ";
 		std::cin >> _epsilon;
 		apprendi();
 	}
@@ -172,7 +176,6 @@ void apprendi() {
 	int cout_counter = 0;
 	auto start = std::chrono::system_clock::now();
 	read_samples_from_file_diagram_battery();
-	float err_epoca_min_value = FLT_MAX;
 	float average_err_rete = 0.00f;
 	float varianza_err_rete = 0.00f;
 	float deviazione_std = 0.00f;
@@ -208,25 +211,22 @@ void apprendi() {
 		if (cout_counter == 10000) {
 			std::cout << "\nepoca:" << _epoca_index <<
 				"\nerr_epoca=" << _err_epoca << 
+				"\nmin. err_epoca=" << _err_epoca_min_value <<
+				"\nlast time write on file = " << timeStr <<
 				"\nvarianza di errore di rete = " << varianza_err_rete <<
 				"\nmedia di errore di rete = " << average_err_rete << 
 				"\ndeviazione standard errore di rete = " << deviazione_std << 
 				"\nmax err_epoca is on sample line = " << max_error_file_index_line <<
+				"\npercentage dev.standard err_rete / media err_rete = " << (deviazione_std / average_err_rete) * 100 << "%" <<
 				"\nepsilon=" << _epsilon << "\n";
 			cout_counter = 0;
-			if (err_epoca_min_value > _err_epoca) {
+			if (_err_epoca_min_value > _err_epoca) {
 				is_on_wtrite_file = true;
-				err_epoca_min_value = _err_epoca;
+				_err_epoca_min_value = _err_epoca;
 			}
 		}
 		if (is_on_wtrite_file) {
-			std::time_t now = std::time(nullptr);
-			std::tm local_time;
-			localtime_s(&local_time, &now);
-			char timeStr[9]; 
-			std::strftime(timeStr, sizeof(timeStr), "%H:%M:%S", &local_time);
-			err_min_rete = _err_rete;
-			std::cout << "\nwrite on file in ora " << timeStr << "\n";
+			setTime();
 			write_weights_on_file();
 		}
 	} while (_err_epoca > _err_amm);
@@ -239,6 +239,12 @@ void apprendi() {
 #elif _WIN32
 	_getch();
 #endif
+}
+void setTime(){
+	std::time_t now = std::time(nullptr);
+	std::tm local_time;
+	localtime_s(&local_time, &now);
+	std::strftime(timeStr, sizeof(timeStr), "%H:%M:%S", &local_time);
 }
 void forward() {
 	for (int k = 0; k < (numberOf_H); k++) {
@@ -291,7 +297,7 @@ double get_random_number_from_xavier() {
 float sigmoid_activation(float Z) {
 	return 1.00f / (1.00f + exp((Z * -1)));
 }
-void read_samples_from_file_diagram_battery() {
+void read_samples_from_file_diagram_battery2() {
 	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";//"72V_Battery.CSV";
 	std::ifstream file(filename);
 	if (!file.is_open()) {
@@ -368,15 +374,112 @@ void read_samples_from_file_diagram_battery() {
 #endif
 	}
 	else {
-		cout << "\n\nTraining sample index is " << training_block_index << " and seems to have been loaded correctly.";
+		//cout << "\n\nTraining sample index is " << training_block_index << " and seems to have been loaded correctly.";
 #ifdef __linux__
 #elif _WIN32
-		system("pause");
+		//system("pause");
 #else
 
 #endif
 	}
 	file.close();
+}
+void read_samples_from_file_diagram_battery() {
+	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Errore nell'apertura del file " << filename << std::endl;
+		return;
+	}
+
+	std::string line;
+	int training_block_index = 0;
+	int training_row_index = 0;
+	int total_lines = 0;
+
+	// Ciclo di lettura del file riga per riga
+	while (std::getline(file, line)) {
+		total_lines++;
+
+		// Se abbiamo raggiunto il numero massimo di gruppi, usciamo dal ciclo per evitare overflow
+		if (training_block_index >= training_samples) {
+			std::cerr << "Raggiunto il limite di training_samples (" << training_samples << "). Interrompo la lettura.\n";
+			break;
+		}
+
+		// Saltiamo righe vuote per evitare problemi di parsing
+		if (line.empty()) {
+			std::cerr << "Riga " << total_lines << " vuota, salto...\n";
+			continue;
+		}
+
+		// Creiamo uno stream per la riga corrente
+		std::istringstream ss(line);
+		std::string token;
+
+		try {
+			if (training_row_index >= 0 && training_row_index <= 5) {
+				// Legge tre token, il terzo è quello utile per battery_out_training
+				std::getline(ss, token, ';'); // Primo campo (ignorato)
+				std::getline(ss, token, ';'); // Secondo campo (ignorato)
+				if (!std::getline(ss, token, ';')) {
+					std::cerr << "Errore: riga " << total_lines << " non contiene abbastanza token\n";
+					continue;
+				}
+				battery_out_training[training_block_index][training_row_index] = std::stod(token);
+				std::cout << "battery[" << training_block_index << "][" << training_row_index
+					<< "] = " << battery_out_training[training_block_index][training_row_index] << "\n";
+			}
+			else if (training_row_index == 6) {
+				// Riga per il wattora
+				std::getline(ss, token, ';'); // Ignora il primo campo
+				std::getline(ss, token, ';'); // Ignora il secondo campo
+				if (!std::getline(ss, token, ';')) {
+					std::cerr << "Errore: riga " << total_lines << " non contiene abbastanza token per watts\n";
+					continue;
+				}
+				watts_hour_training[training_block_index] = std::stod(token);
+				std::cout << "Watts/hour[" << training_block_index << "] = "
+					<< watts_hour_training[training_block_index] << "\n";
+			}
+			else if (training_row_index == 7) {
+				// Riga per gli ampere
+				std::getline(ss, token, ';'); // Ignora il primo campo
+				std::getline(ss, token, ';'); // Ignora il secondo campo
+				if (!std::getline(ss, token, ';')) {
+					std::cerr << "Errore: riga " << total_lines << " non contiene abbastanza token per amps\n";
+					continue;
+				}
+				amps_training[training_block_index] = std::stod(token);
+				std::cout << "Ampere[" << training_block_index << "] = "
+					<< amps_training[training_block_index] << "\n";
+			}
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Eccezione alla riga " << total_lines
+				<< " del gruppo " << training_block_index << ", posizione " << training_row_index
+				<< ": " << e.what() << "\n";
+		}
+
+		training_row_index++;
+		if (training_row_index == 8) {
+			training_block_index++;
+			training_row_index = 0;
+		}
+	}
+
+	file.close();
+
+	std::cout << "Totale righe lette: " << total_lines << "\n";
+	std::cout << "Totale gruppi processati: " << training_block_index << "\n";
+	if (training_block_index != training_samples) {
+		std::cout << "\n\nALLERT!!!!!!! Numero di gruppi letti ("
+			<< training_block_index << ") diverso da training_samples ("
+			<< training_samples << ")\n";
+#ifdef _WIN32
+		system("pause");
+#endif
+	}
 }
 void read_weights_from_file() {
 	std::ifstream in(_relative_files_path + "/" + "model.bin", std::ios_base::binary);
@@ -397,6 +500,8 @@ void read_weights_from_file() {
 		for (int j = 0; j < numberOf_Y; j++) {
 			in.read((char*)&output_bias[j], sizeof(float));
 		}
+		in.read((char*)&_err_epoca_min_value, sizeof(float));
+		in.read((char*)&_epsilon, sizeof(float));
 	}
 }
 void write_weights_on_file() {
@@ -418,7 +523,9 @@ void write_weights_on_file() {
 		for (int j = 0; j < numberOf_Y; j++) {
 			fw.write((char*)&output_bias[j], sizeof(float));
 		}
-		fw.write((char*)&_err_epoca, sizeof(float));
+		fw.write((char*)&_err_epoca_min_value, sizeof(float));
+		fw.write((char*)&_epsilon, sizeof(float));
+
 		fw.close();
 	}
 	else {

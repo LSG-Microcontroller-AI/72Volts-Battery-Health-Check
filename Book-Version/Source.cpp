@@ -146,9 +146,6 @@ void init() {
 }
 void predict() {
 	while (true) {
-		// Messaggio iniziale
-		//std::cout << "\nInserisci i valori per Ampere e Watt-ora (Ctrl+C per uscire):\n";
-		// Input per x[0] (Ampere)
 		std::cout << "\nInserisci gli Ampere : ";
 		std::cin >> x[0];
 		float normalized = x[0] / 50.00f;
@@ -157,18 +154,11 @@ void predict() {
 		// Assegna a x[0] il seno e a x[1] il coseno dell'angolo
 		x[0] = sin(angle);
 		x[1] = cos(angle);
-		// Input per x[1] (Watt-ora)
 		std::cout << "Inserisci i Watt/h : ";
 		std::cin >> x[2];
-		// Stampa dei valori
-		/*std::cout << "\nHai inserito:\n";
-		std::cout << "x[0] (Ampere) = " << x[0] << "\n";
-		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";*/
-		//x[0] = log(x[0] + 1.0f) / 10.0f;
 		x[2] = log(x[1] + 1.0f) / 10.0f;
 		forward();
-		// Stampa dei risultati
-		std::cout /*<< "\n x[0] = " << exp(x[0] * 10) << " x[1] = " << exp(x[1] * 10) << "\n"*/
+		std::cout 
 			<< "\n y[0] = " << y[0] * 10.00f
 			<< "\n y[1] = " << y[1] * 10.00f
 			<< "\n y[2] = " << y[2] * 10.00f

@@ -52,6 +52,7 @@ float _err_epoca_min_value = FLT_MAX;
 default_random_engine generator(time(0));
 const string _relative_files_path = "72V-Battery-S11";
 bool is_on_wtrite_file = false;
+float observed_data[6] = { 0.00f };	
 int main() {
 	init();
 	char response;
@@ -94,6 +95,12 @@ double xavier_init(double n_x, double n_y) {
 	return sqrt(6.0) / sqrt(n_x + n_y);
 }
 void init() {
+	observed_data[0] = 1.75f;
+	observed_data[1] = 1.34f;
+	observed_data[2] = 1.99f;
+	observed_data[3] = 1.90f;
+	observed_data[4] = 1.85f;
+	observed_data[5] = 1.93f;
 	double param = xavier_init(numberOf_X, numberOf_Y);
 	cout << "xavier glorot param : " << param << "\n\n";
 	_lower_bound_xavier = -param;
@@ -534,6 +541,66 @@ void write_weights_on_file() {
 		cout << "Problem with opening file";
 	}
 }
+void normalizeArray(float* arr, float* normArr, int size) {
+	float minVal = arr[0];
+	float maxVal = arr[0];
+	// Trova il minimo e il massimo
+	for (int i = 1; i < size; i++) {
+		if (arr[i] < minVal) minVal = arr[i];
+		if (arr[i] > maxVal) maxVal = arr[i];
+	}
+	// Normalizza i valori
+	for (int i = 0; i < size; i++) {
+		if (maxVal != minVal) {
+			normArr[i] = (arr[i] - minVal) / (maxVal - minVal);
+		}
+		else {
+			normArr[i] = 0; // Evita divisione per zero nel caso di valori uguali
+		}
+	}
+}
+float meanSquaredError(const float* arr1, const float* arr2, int size) {
+	float sum = 0.0f;
+	for (int i = 0; i < size; ++i) {
+		float diff = arr1[i] - arr2[i];
+		sum += (diff * diff);  // quadrato della differenza
+	}
+	// MSE = (1 / N) * Σ (diff^2)
+	return sum / size;
+}
+float overallMean(const float* arr1, const float* arr2, int size) {
+	float sum = 0.0f;
+	// Sommiamo tutti gli elementi di entrambi gli array
+	for (int i = 0; i < size; ++i) {
+		sum += arr1[i] + arr2[i];
+	}
+	// La media complessiva è la somma divisa per il numero totale di elementi (2*size)
+	return sum / (2 * size);
+}
+uint8_t calculateErrorPercentage(float mse, float overallMean) {
+	// Calcola il Root Mean Squared Error (RMSE)
+	float rms = sqrt(mse);
+	// Calcola la percentuale: (RMSE / media complessiva) * 100
+	uint8_t errorPercentage = (rms / overallMean) * 100.0f;
+	return errorPercentage;
+}
+float calculateVariance(const float* data, int size) {
+	// Calcolo della media
+	float sum = 0.0f;
+	for (int i = 0; i < size; ++i) {
+		sum += data[i];
+	}
+	float mean = sum / size;
+	// Calcolo della somma dei quadrati delle differenze
+	float sumSquaredDifferences = 0.0f;
+	for (int i = 0; i < size; ++i) {
+		float diff = data[i] - mean;
+		sumSquaredDifferences += diff * diff;
+	}
+	// La varianza (per popolazione) è la media dei quadrati delle differenze
+	return sumSquaredDifferences / size;
+}
+
 
 
 

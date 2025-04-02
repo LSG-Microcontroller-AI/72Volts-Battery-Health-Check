@@ -1,4 +1,4 @@
-using namespace std;
+﻿using namespace std;
 #define _USE_MATH_DEFINES
 #include <iostream>
 #include <cmath>
@@ -29,8 +29,8 @@ float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.00025f;
 float _epsilon = 0.00f;
-int const training_samples = 345;
-const uint8_t numberOf_X = 2;
+int const training_samples = 344;
+const uint8_t numberOf_X = 3;
 const uint8_t numberOf_H = 10;
 const uint8_t numberOf_Y = 6;
 float output_bias[numberOf_Y] = { 0.00 };
@@ -81,7 +81,7 @@ int main() {
 	if (response == 'y') {
 		cout << "\n Start to learning......";
 		if (_epsilon != 0.00f) {
-			std::cout << "\nultimo valore usato per epsilon � stato : " << _epsilon ;
+			std::cout << "\nultimo valore usato per epsilon è stato : " << _epsilon ;
 		}
 		std::cout << "\nInserisci nuovo valore per epsilon : ";
 		std::cin >> _epsilon;
@@ -147,28 +147,35 @@ void init() {
 void lavora() {
 	while (true) {
 		// Messaggio iniziale
-		std::cout << "\nInserisci i valori per Ampere e Watt-ora (Ctrl+C per uscire):\n";
+		//std::cout << "\nInserisci i valori per Ampere e Watt-ora (Ctrl+C per uscire):\n";
 		// Input per x[0] (Ampere)
-		std::cout << "Inserisci il valore per x[0] (Ampere, float): ";
+		std::cout << "\nInserisci gli Ampere : ";
 		std::cin >> x[0];
+		float normalized = x[0] / 50.00f;
+		// Mappa il valore normalizzato in un angolo (0 a 2π)
+		float angle = normalized * 2 * M_PI;
+		// Assegna a x[0] il seno e a x[1] il coseno dell'angolo
+		x[0] = sin(angle);
+		x[1] = cos(angle);
 		// Input per x[1] (Watt-ora)
-		std::cout << "Inserisci il valore per x[1] (Watt-ora, float): ";
-		std::cin >> x[1];
+		std::cout << "Inserisci i Watt/h : ";
+		std::cin >> x[2];
 		// Stampa dei valori
-		std::cout << "\nHai inserito:\n";
+		/*std::cout << "\nHai inserito:\n";
 		std::cout << "x[0] (Ampere) = " << x[0] << "\n";
-		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";
-		x[0] = log(x[0] + 1.0f) / 10.0f;
-		x[1] = log(x[1] + 1.0f) / 10.0f;
+		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";*/
+		//x[0] = log(x[0] + 1.0f) / 10.0f;
+		x[2] = log(x[1] + 1.0f) / 10.0f;
 		forward();
 		// Stampa dei risultati
-		std::cout << "\n x[0] = " << exp(x[0] * 10) << " x[1] = " << exp(x[1] * 10) << "\n"
+		std::cout /*<< "\n x[0] = " << exp(x[0] * 10) << " x[1] = " << exp(x[1] * 10) << "\n"*/
 			<< "\n y[0] = " << y[0] * 10.00f
 			<< "\n y[1] = " << y[1] * 10.00f
 			<< "\n y[2] = " << y[2] * 10.00f
 			<< "\n y[3] = " << y[3] * 10.00f
 			<< "\n y[4] = " << y[4] * 10.00f
-			<< "\n y[5] = " << y[5] * 10.00f;
+			<< "\n y[5] = " << y[5] * 10.00f
+		<< "\n";
 	}
 }
 void apprendi() {
@@ -185,8 +192,14 @@ void apprendi() {
 		average_err_rete = 0.00f;
 		varianza_err_rete = 0.00f;
 		for (unsigned long p = 0; p < training_samples; p++) {
-			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
-			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
+			// Normalizza il valore (range: 0-50) in un intervallo [0, 1]
+			float normalized = amps_training[p] / 50.00f;
+			// Mappa il valore normalizzato in un angolo (0 a 2π)
+			float angle = normalized * 2 * M_PI;
+			// Assegna a x[0] il seno e a x[1] il coseno dell'angolo
+			x[0] = sin(angle);
+			x[1] = cos(angle);
+			x[2] = log(watts_hour_training[p] + 1.0f) / 10.0f;
 			for (int i = 0; i < numberOf_Y; i++) {
 				d[i] = battery_out_training[p][i] / 10.00f;
 			}
@@ -391,7 +404,6 @@ void read_samples_from_file_diagram_battery() {
 		std::cerr << "Errore nell'apertura del file " << filename << std::endl;
 		return;
 	}
-
 	std::string line;
 	int training_block_index = 0;
 	int training_row_index = 0;
@@ -419,7 +431,7 @@ void read_samples_from_file_diagram_battery() {
 
 		try {
 			if (training_row_index >= 0 && training_row_index <= 5) {
-				// Legge tre token, il terzo � quello utile per battery_out_training
+				// Legge tre token, il terzo è quello utile per battery_out_training
 				std::getline(ss, token, ';'); // Primo campo (ignorato)
 				std::getline(ss, token, ';'); // Secondo campo (ignorato)
 				if (!std::getline(ss, token, ';')) {

@@ -16,7 +16,7 @@ extern void* __brkval;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
-float y_normalized_real_data[numberOf_Y] = { 0.00 };
+float normalized_observed_data[numberOf_Y] = { 0.00 };
 float y_normalized_model_data[numberOf_Y] = { 0.00 };
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
@@ -25,7 +25,7 @@ float W2[numberOf_H][numberOf_Y] = { 0.00 };
 float x[numberOf_X] = { 0.00 };
 float h[numberOf_H] = { 0.00 };
 float y[numberOf_Y] = { 0.00f };
-float processed_data[6] = { 0.00 };
+float observed_data[6] = { 0.00 };
 const int headerSize = 2;
 const uint8_t numFloats = 8;
 const uint8_t dataSize = numFloats * sizeof(float);
@@ -38,19 +38,17 @@ SoftwareSerial mySerial(10, 11); // Definizione: RX, TX
 void setup() {
 	Serial.begin(9600);
 	read_weights_from_eeprom();
-	/*x[0] = 23.00f;
-	x[1] = 246.00f;*/
-	processed_data[0] = 1.75f;
-	processed_data[1] = 1.34f;
-	processed_data[2] = 1.99f;
-	processed_data[3] = 1.90f;
-	processed_data[4] = 1.85f;
-	processed_data[5] = 1.93f;
+	observed_data[0] = 1.75f;
+	observed_data[1] = 1.34f;
+	observed_data[2] = 1.99f;
+	observed_data[3] = 1.90f;
+	observed_data[4] = 1.85f;
+	observed_data[5] = 1.93f;
 
 }
 // the loop function runs over and over again until power down or reset
 void loop() {
-	simulateTransmission();
+	//simulateTransmission();
 	int ram_libera = freeMemory();
 	Serial.print(F("RAM libera: "));
 	Serial.print(ram_libera);
@@ -60,15 +58,15 @@ void loop() {
 	x[0] = log(x[0] + 1.0f) / 10.0f;
 	x[1] = log(x[1] + 1.0f) / 10.0f;
 	forward();
-	//print_model_data();
-	normalizeArray(processed_data, y_normalized_real_data, numberOf_Y);
+	print_model_data();
+	normalizeArray(observed_data, normalized_observed_data, numberOf_Y);
 	normalizeArray(y, y_normalized_model_data, numberOf_Y);
-	float mse = meanSquaredError(y_normalized_real_data, y_normalized_model_data, numberOf_Y);
-	float overall_mean = overallMean(y_normalized_real_data, y_normalized_model_data,numberOf_Y);
+	float mse = meanSquaredError(normalized_observed_data, y_normalized_model_data, numberOf_Y);
+	float overall_mean = overallMean(normalized_observed_data, y_normalized_model_data,numberOf_Y);
 	uint8_t percentage = calculateErrorPercentage(mse, overall_mean);
 	Serial.println(percentage);
 	Serial.println(mse, 10);
-	float varianza = calculateVariance(y_normalized_real_data, numberOf_Y);
+	float varianza = calculateVariance(normalized_observed_data, numberOf_Y);
 	Serial.println(varianza);
 	//print_normalizer_processed_data();
 	//print_normalizer_model_data();
@@ -87,12 +85,12 @@ void print_model_data(){
 }
 void print_normalizer_processed_data() {
 	Serial.println();
-	Serial.print(F("y_normalized[0] = ")); Serial.println(y_normalized_real_data[0]);
-	Serial.print(F("y_normalized[1] = "));  Serial.println(y_normalized_real_data[1]);
-	Serial.print(F("y_normalized[2] = "));  Serial.println(y_normalized_real_data[2]);
-	Serial.print(F("y_normalized[3] = "));  Serial.println(y_normalized_real_data[3]);
-	Serial.print(F("y_normalized[4] = "));  Serial.println(y_normalized_real_data[4]);
-	Serial.print(F("y_normalized[5] = "));  Serial.println(y_normalized_real_data[5]);
+	Serial.print(F("y_normalized[0] = ")); Serial.println(normalized_observed_data[0]);
+	Serial.print(F("y_normalized[1] = "));  Serial.println(normalized_observed_data[1]);
+	Serial.print(F("y_normalized[2] = "));  Serial.println(normalized_observed_data[2]);
+	Serial.print(F("y_normalized[3] = "));  Serial.println(normalized_observed_data[3]);
+	Serial.print(F("y_normalized[4] = "));  Serial.println(normalized_observed_data[4]);
+	Serial.print(F("y_normalized[5] = "));  Serial.println(normalized_observed_data[5]);
 	delay(2000);
 }
 void print_normalizer_model_data() {

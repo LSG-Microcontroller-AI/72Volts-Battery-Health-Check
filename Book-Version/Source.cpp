@@ -15,7 +15,7 @@
 #include <conio.h>
 #include <windows.h>
 void init();
-void lavora();
+void predict();
 double get_random_number_from_xavier();
 void forward();
 void apprendi();
@@ -87,7 +87,7 @@ int main() {
 		std::cin >> _epsilon;
 		apprendi();
 	}
-	lavora();
+	predict();
 	cout << "press a key..\n\n";
 }
 double xavier_init(double n_x, double n_y) {
@@ -144,7 +144,7 @@ void init() {
 		}
 	}
 }
-void lavora() {
+void predict() {
 	while (true) {
 		// Messaggio iniziale
 		//std::cout << "\nInserisci i valori per Ampere e Watt-ora (Ctrl+C per uscire):\n";

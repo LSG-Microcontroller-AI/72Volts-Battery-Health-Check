@@ -175,7 +175,7 @@ float meanSquaredError(const float* arr1, const float* arr2, int size) {
 	float sum = 0.0f;
 	for (int i = 0; i < size; ++i) {
 		float diff = arr1[i] - arr2[i];
-		sum += diff * diff;  // quadrato della differenza
+		sum += (diff * diff);  // quadrato della differenza
 	}
 	// MSE = (1 / N) * Σ (diff^2)
 	return sum / size;

@@ -36,7 +36,7 @@ float _err_epoca;
 float _max_single_traning_output_error = 0.00f;
 float _err_amm = 0.009f;
 float _epsilon = 0.00001f;
-uint16_t const training_samples = 100;
+uint16_t const training_samples = 339;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
@@ -68,8 +68,7 @@ mt19937 gen;
 float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
-float relu(float x)
-{
+float relu(float x){
 	return (x > 0) ? x : 0;
 }
 // Derivata della funzione ReLU

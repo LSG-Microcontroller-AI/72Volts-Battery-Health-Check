@@ -24,12 +24,17 @@ void read_weights_from_file();
 void write_weights_on_file();
 void read_samples_from_file_diagram_battery();
 float sigmoid_activation(float A);
+float overallMean(const float* arr1, const float* arr2, int size);
+void normalizeArray(float* array, float* normalized_array, int size);
+float mean_square_error(const float* arr1, const float* arr2, int size);
+float calculateVariance(const float* data, int size);
+float calculateErrorPercentage(float mse, float overallMean);
 void setTime();
 float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.00025f;
 float _epsilon = 0.00f;
-int const training_samples = 344;
+int const training_samples = 339;
 const uint8_t numberOf_X = 3;
 const uint8_t numberOf_H = 10;
 const uint8_t numberOf_Y = 6;
@@ -53,6 +58,8 @@ default_random_engine generator(time(0));
 const string _relative_files_path = "72V-Battery-S11";
 bool is_on_wtrite_file = false;
 float observed_data[6] = { 0.00f };	
+float normalized_observed_data[numberOf_Y] = { 0.00 };
+float y_normalized_model_data[numberOf_Y] = { 0.00 };
 int main() {
 	init();
 	char response;
@@ -95,12 +102,12 @@ double xavier_init(double n_x, double n_y) {
 	return sqrt(6.0) / sqrt(n_x + n_y);
 }
 void init() {
-	observed_data[0] = 1.75f;
-	observed_data[1] = 1.34f;
-	observed_data[2] = 1.99f;
-	observed_data[3] = 1.90f;
-	observed_data[4] = 1.85f;
-	observed_data[5] = 1.93f;
+	observed_data[0] = 2.57f;
+	observed_data[1] = 2.57;
+	observed_data[2] = 2.64f;
+	observed_data[3] = 2.55f;
+	observed_data[4] = 2.59f;
+	observed_data[5] = 2.67f;
 	double param = xavier_init(numberOf_X, numberOf_Y);
 	cout << "xavier glorot param : " << param << "\n\n";
 	_lower_bound_xavier = -param;
@@ -152,6 +159,7 @@ void init() {
 	}
 }
 void predict() {
+	normalizeArray(observed_data, normalized_observed_data, numberOf_Y);
 	while (true) {
 		std::cout << "\nInserisci gli Ampere : ";
 		std::cin >> x[0];
@@ -165,6 +173,16 @@ void predict() {
 		std::cin >> x[2];
 		x[2] = log(x[1] + 1.0f) / 10.0f;
 		forward();
+		normalizeArray(y, y_normalized_model_data, numberOf_Y);
+		float mse = mean_square_error(normalized_observed_data, y_normalized_model_data, numberOf_Y);
+		float overall_mean = overallMean(normalized_observed_data, y_normalized_model_data, numberOf_Y);
+		float percentage = calculateErrorPercentage(mse, overall_mean);
+		/*Serial.println(percentage);
+		Serial.println(mse, 10);*/
+		float varianza = calculateVariance(normalized_observed_data, numberOf_Y);
+		//Serial.println(varianza);
+		std::cout << "percentage = :" << percentage << "%\n";
+		std::cout << "varianza = :" << varianza << "\n";
 		std::cout 
 			<< "\n y[0] = " << y[0] * 10.00f
 			<< "\n y[1] = " << y[1] * 10.00f
@@ -559,8 +577,8 @@ void normalizeArray(float* arr, float* normArr, int size) {
 		}
 	}
 }
-float meanSquaredError(const float* arr1, const float* arr2, int size) {
-	float sum = 0.0f;
+float mean_square_error(const float* arr1, const float* arr2, int size) {
+	float sum = 0.00f;
 	for (int i = 0; i < size; ++i) {
 		float diff = arr1[i] - arr2[i];
 		sum += (diff * diff);  // quadrato della differenza
@@ -577,11 +595,11 @@ float overallMean(const float* arr1, const float* arr2, int size) {
 	// La media complessiva è la somma divisa per il numero totale di elementi (2*size)
 	return sum / (2 * size);
 }
-uint8_t calculateErrorPercentage(float mse, float overallMean) {
+float calculateErrorPercentage(float mse, float overallMean) {
 	// Calcola il Root Mean Squared Error (RMSE)
 	float rms = sqrt(mse);
 	// Calcola la percentuale: (RMSE / media complessiva) * 100
-	uint8_t errorPercentage = (rms / overallMean) * 100.0f;
+	float errorPercentage = (rms / overallMean) * 100.00f;
 	return errorPercentage;
 }
 float calculateVariance(const float* data, int size) {

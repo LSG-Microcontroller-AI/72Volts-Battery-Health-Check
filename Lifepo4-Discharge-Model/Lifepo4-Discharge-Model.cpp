@@ -25,7 +25,7 @@ using namespace std;
 #else
 #endif
 void init();
-void lavora();
+void predict();
 void forward();
 void apprendi();
 void back_propagate();
@@ -35,8 +35,8 @@ void read_samples_from_file_diagram_battery();
 float _err_epoca;
 float _max_single_traning_output_error = 0.00f;
 float _err_amm = 0.009f;
-float _epsilon = 0.00001f;
-uint16_t const training_samples = 339;
+float _epsilon = 0.001f;
+uint16_t const training_samples = 338;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
@@ -55,20 +55,21 @@ string global_time_recorded;
 default_random_engine generator(time(0));
 const string _relative_files_path = "72V-Battery-S11";
 //GLFWwindow* window;
-std::vector<double> ascissa1;
-std::vector<double> ascissa2;
-std::vector<double> ascissa3;
-std::vector<double> ascissa4;
-std::vector<double> ordinata1;
-std::vector<double> ordinata2;
-std::vector<double> ordinata3;
-std::vector<double> ordinata4;
+//std::vector<double> ascissa1;
+//std::vector<double> ascissa2;
+//std::vector<double> ascissa3;
+//std::vector<double> ascissa4;
+//std::vector<double> ordinata1;
+//std::vector<double> ordinata2;
+//std::vector<double> ordinata3;
+//std::vector<double> ordinata4;
 int _epoca_index = 0;
 mt19937 gen;
 float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
-float relu(float x){
+float _err_epoca_min_value = FLT_MAX;
+float relu(float x) {
 	return (x > 0) ? x : 0;
 }
 // Derivata della funzione ReLU
@@ -117,8 +118,7 @@ float relu(float x){
 //		std::cout << "Errore OpenGL: " << err << std::endl;
 //	}
 //}
-int main()
-{
+int main(){
 	//window = InitWindow();
 #ifdef __linux__
 #elif _WIN32
@@ -134,7 +134,7 @@ int main()
 	Beep(3000, 200);
 #endif
 	char response;
-	cout << "'n' for new learning, 'c' for continue learning, 'e' for execute\n\n";
+	cout << "\n'n' for new learning, 'c' for continue learning, 'e' for execute.\n";
 	//cout << "\n Do you want load the weights file\n";
 #ifdef __linux__
 	response = std::cin.get();
@@ -142,36 +142,47 @@ int main()
 #elif _WIN32
 	response = _getch();
 #endif
-	if (response == 'e')
-	{
+	if (response == 'e'){
 		read_weights_from_file();
-		lavora();
+		predict();
 	}
-	if (response == 'c')
-	{
-		cout << "\n model loaded\n";
+	if (response == 'c'){
+		cout << "\nmodel loaded.\n";
 		read_weights_from_file();
-		apprendi();
-	}
-	if (response == 'n')
-	{
-		cout << "ATTENTION !!!!!!!!!!!!! are you sure to restart learning !!!!!!!!!!!!!!!!!!!\n\n";
+		cout << "\nlast inserted epsilon is : " << _epsilon <<
+			" do you wanna change it? y or n\n"; 
 #ifdef __linux__
 		response = std::cin.get();
 		std::cin.ignore();
 #elif _WIN32
 		response = _getch();
 #endif
-		if (response == 'y')
-		{
+		if (response == 'y'){
+			cout << "\ninsert new epsilon value : ";
+			cin >> _epsilon;
+			cout << "\n epsilon changed\n";
+		}
+		else{
+			cout << "\n epsilon not changed\n";
+		}
+		apprendi();
+	}
+	if (response == 'n'){
+		cout << "ATTENTION !!!!!!!!!!!!! are you sure to restart learning? press y to continue !!!!!!!!!!!!!!!!!!!\n\n";
+#ifdef __linux__
+		response = std::cin.get();
+		std::cin.ignore();
+#elif _WIN32
+		response = _getch();
+#endif
+		if (response == 'y'){
 			cout << "\n model overwritten\n";
 			apprendi();
 		}
-		else
-		{
-			cout << "\n model loaded\n";
-			read_weights_from_file();
-			apprendi();
+		else{
+			cout << "\nprocess blocked.\n";
+			/*read_weights_from_file();
+			apprendi();*/
 		}
 	}
 }
@@ -239,7 +250,7 @@ void init()
 		}
 	}
 }
-void lavora()
+void predict()
 {
 	while (true)
 	{
@@ -285,8 +296,8 @@ void apprendi() {
 	int cout_counter = 0;
 	auto start = std::chrono::system_clock::now();
 	read_samples_from_file_diagram_battery();
-	float err_epoca_min_value = FLT_MAX;
-	do{
+	
+	do {
 		_err_epoca = 0.00f;
 		_max_single_traning_output_error_average = 0.00f;
 		uint16_t max_traning_sample_error = 0;
@@ -294,12 +305,12 @@ void apprendi() {
 		{
 			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
-			for (int i = 0; i < numberOf_Y; i++){
+			for (int i = 0; i < numberOf_Y; i++) {
 				d[i] = battery_out_training[p][i] / 10.00f;
 			}
 			forward();
 			back_propagate();
-			if (_max_single_traning_output_error > _err_epoca){
+			if (_max_single_traning_output_error > _err_epoca) {
 				_err_epoca = _max_single_traning_output_error;
 				max_traning_sample_error = training_samples;
 			}
@@ -308,7 +319,7 @@ void apprendi() {
 		_epoca_index++;
 		cout_counter++;
 		is_on_wtrite_file = false;
-		if (cout_counter == 1000){
+		if (cout_counter == 1000) {
 			_max_single_traning_output_error_average = _max_single_traning_output_error_average / training_samples;
 			cout << "epoca : " << _epoca_index << "\n\n";
 			cout << "media di max errore di traning : " << _max_single_traning_output_error_average << "\n\n";
@@ -316,10 +327,9 @@ void apprendi() {
 			cout << "con epsilon : " << _epsilon << "\n\n";
 			cout << "max error on traning sample : " << max_traning_sample_error << "\n\n";
 			cout_counter = 0;
-			if ((err_epoca_min_value > _err_epoca) && _err_epoca > 0.00f)
-			{
+			if ((_err_epoca_min_value > _err_epoca) && _err_epoca > 0.00f){
 				is_on_wtrite_file = true;
-				err_epoca_min_value = _err_epoca;
+				_err_epoca_min_value = _err_epoca;
 			}
 		}
 		if (is_on_wtrite_file)
@@ -384,18 +394,18 @@ void apprendi() {
 #endif
 }
 void forward() {
-	for (int k = 0; k < (numberOf_H); k++){
+	for (int k = 0; k < (numberOf_H); k++) {
 		float Zk = 0.00f;
-		for (int i = 0; i < numberOf_X; i++){
+		for (int i = 0; i < numberOf_X; i++) {
 			Zk += (W1[i][k] * x[i]);
 		}
 		//insert X bias
 		Zk += hidden_bias[k];
 		h[k] = relu(Zk);
 	}
-	for (int j = 0; j < numberOf_Y; j++){
+	for (int j = 0; j < numberOf_Y; j++) {
 		float Zj = 0.00f;
-		for (int k = 0; k < numberOf_H; k++){
+		for (int k = 0; k < numberOf_H; k++) {
 			Zj += (W2[k][j] * h[k]);
 		}
 		//insert H bias
@@ -403,20 +413,20 @@ void forward() {
 		y[j] = Zj;
 	}
 }
-void back_propagate(){
+void back_propagate() {
 	float err_H[numberOf_H] = { 0.00f };
 	float delta = 0.00f;
 	_max_single_traning_output_error = 0.00f;
 	// Calcolo del delta per il layer di output (attivazione lineare -> derivata = 1)
 	float single_training_output_error = 0.00f;
-	for (int j = 0; j < numberOf_Y; j++){
+	for (int j = 0; j < numberOf_Y; j++) {
 		single_training_output_error = d[j] - y[j];
-		if (fabs(single_training_output_error) > _max_single_traning_output_error){
+		if (fabs(single_training_output_error) > _max_single_traning_output_error) {
 			_max_single_traning_output_error = fabs(single_training_output_error);
 		}
 		delta = single_training_output_error;  // Derivata del layer output lineare è 1
 		// Aggiornamento dei pesi del layer di output e accumulo dell'errore per il layer nascosto
-		for (int k = 0; k < numberOf_H; k++){
+		for (int k = 0; k < numberOf_H; k++) {
 			W2[k][j] += (_epsilon * delta * h[k]);
 			err_H[k] += delta * W2[k][j];
 		}
@@ -424,12 +434,12 @@ void back_propagate(){
 		output_bias[j] += _epsilon * delta;
 	}
 	// Calcolo del delta per il layer nascosto usando la derivata della ReLU
-	for (int k = 0; k < numberOf_H; k++){
+	for (int k = 0; k < numberOf_H; k++) {
 		// Derivata della ReLU: 1 se il neurone è attivo (h[k] > 0), 0 altrimenti
 		float relu_deriv = (h[k] > 0.0f) ? 1.0f : 0.0f;
 		delta = err_H[k] * relu_deriv;
 		// Aggiornamento dei pesi del layer nascosto
-		for (int i = 0; i < numberOf_X; i++){
+		for (int i = 0; i < numberOf_X; i++) {
 			W1[i][k] += (_epsilon * delta * x[i]);
 		}
 		// Aggiornamento del bias per il layer nascosto
@@ -550,38 +560,33 @@ void read_weights_from_file()
 		{
 			in.read((char*)&output_bias[j], sizeof(float));
 		}
+		in.read((char*)&_err_epoca_min_value, sizeof(float));
+		in.read((char*)&_epsilon, sizeof(float));
 		//in.read((char*)&x[numberOf_X - 1], sizeof(float));
 		//in.read((char*)&h[numberOf_H - 1], sizeof(float));
 	}
 }
-void write_weights_on_file()
-{
+void write_weights_on_file(){
 	std::ofstream fw(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
-	if (fw.good())
-	{
-		for (int i = 0; i < numberOf_X; i++)
-		{
-			for (int k = 0; k < numberOf_H; k++)
-			{
+	if (fw.good()){
+		for (int i = 0; i < numberOf_X; i++){
+			for (int k = 0; k < numberOf_H; k++){
 				fw.write((char*)&W1[i][k], sizeof(float));
 			}
 		}
-		for (int j = 0; j < numberOf_Y; j++)
-		{
-			for (int k = 0; k < numberOf_H; k++)
-			{
+		for (int j = 0; j < numberOf_Y; j++){
+			for (int k = 0; k < numberOf_H; k++){
 				fw.write((char*)&W2[k][j], sizeof(float));
 			}
 		}
-		for (int k = 0; k < numberOf_H; k++)
-		{
+		for (int k = 0; k < numberOf_H; k++){
 			fw.write((char*)&hidden_bias[k], sizeof(float));
 		}
-		for (int j = 0; j < numberOf_Y; j++)
-		{
+		for (int j = 0; j < numberOf_Y; j++){
 			fw.write((char*)&output_bias[j], sizeof(float));
 		}
-		fw.write((char*)&_err_epoca, sizeof(float));
+		fw.write((char*)&_err_epoca_min_value, sizeof(float));
+		fw.write((char*)&_epsilon, sizeof(float));
 		//fw.write((char*)&x[numberOf_X - 1], sizeof(float));
 		//fw.write((char*)&h[numberOf_H - 1], sizeof(float));
 		fw.close();
@@ -589,6 +594,65 @@ void write_weights_on_file()
 	}
 	else
 		cout << "Problem with opening file";
+}
+void normalizeArray(float* arr, float* normArr, int size) {
+	float minVal = arr[0];
+	float maxVal = arr[0];
+	// Trova il minimo e il massimo
+	for (int i = 1; i < size; i++) {
+		if (arr[i] < minVal) minVal = arr[i];
+		if (arr[i] > maxVal) maxVal = arr[i];
+	}
+	// Normalizza i valori
+	for (int i = 0; i < size; i++) {
+		if (maxVal != minVal) {
+			normArr[i] = (arr[i] - minVal) / (maxVal - minVal);
+		}
+		else {
+			normArr[i] = 0; // Evita divisione per zero nel caso di valori uguali
+		}
+	}
+}
+float mean_square_error(const float* arr1, const float* arr2, int size) {
+	float sum = 0.00f;
+	for (int i = 0; i < size; ++i) {
+		float diff = arr1[i] - arr2[i];
+		sum += (diff * diff);  // quadrato della differenza
+	}
+	// MSE = (1 / N) * Σ (diff^2)
+	return sum / size;
+}
+float overallMean(const float* arr1, const float* arr2, int size) {
+	float sum = 0.0f;
+	// Sommiamo tutti gli elementi di entrambi gli array
+	for (int i = 0; i < size; ++i) {
+		sum += arr1[i] + arr2[i];
+	}
+	// La media complessiva è la somma divisa per il numero totale di elementi (2*size)
+	return sum / (2 * size);
+}
+float calculateErrorPercentage(float mse, float overallMean) {
+	// Calcola il Root Mean Squared Error (RMSE)
+	float rms = sqrt(mse);
+	// Calcola la percentuale: (RMSE / media complessiva) * 100
+	float errorPercentage = (rms / overallMean) * 100.00f;
+	return errorPercentage;
+}
+float calculateVariance(const float* data, int size) {
+	// Calcolo della media
+	float sum = 0.0f;
+	for (int i = 0; i < size; ++i) {
+		sum += data[i];
+	}
+	float mean = sum / size;
+	// Calcolo della somma dei quadrati delle differenze
+	float sumSquaredDifferences = 0.0f;
+	for (int i = 0; i < size; ++i) {
+		float diff = data[i] - mean;
+		sumSquaredDifferences += diff * diff;
+	}
+	// La varianza (per popolazione) è la media dei quadrati delle differenze
+	return sumSquaredDifferences / size;
 }
 
 

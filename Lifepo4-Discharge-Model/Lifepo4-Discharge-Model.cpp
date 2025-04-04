@@ -33,7 +33,7 @@ void read_weights_from_file();
 void write_weights_on_file();
 void read_samples_from_file_diagram_battery();
 float _err_epoca;
-float _max_single_traning_output_error = 0.00f;
+float _err_rete = 0.00f;
 float _err_amm = 0.009f;
 float _epsilon = 0.001f;
 uint16_t const training_samples = 338;
@@ -64,7 +64,7 @@ const string _relative_files_path = "72V-Battery-S11";
 //std::vector<double> ordinata2;
 //std::vector<double> ordinata3;
 //std::vector<double> ordinata4;
-int _epoca_index = 0;
+
 float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
@@ -293,11 +293,18 @@ void predict()
 //	open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
 //}
 void apprendi() {
+	int _epoca_index = 0;
 	int cout_counter = 0;
 	auto start = std::chrono::system_clock::now();
 	read_samples_from_file_diagram_battery();
+	float average_err_rete = 0.00f;
+	float varianza_err_rete = 0.00f;
+	float deviazione_std = 0.00f;
+	float listOfErr_rete[training_samples] = { 0.00f };
 	do {
 		_err_epoca = 0.00f;
+		average_err_rete = 0.00f;
+		varianza_err_rete = 0.00f;
 		_max_single_traning_output_error_average = 0.00f;
 		uint16_t max_traning_sample_error = 0;
 		for (unsigned long p = 0; p < training_samples; p++)
@@ -309,11 +316,11 @@ void apprendi() {
 			}
 			forward();
 			back_propagate();
-			if (_max_single_traning_output_error > _err_epoca) {
-				_err_epoca = _max_single_traning_output_error;
+			if (_err_rete > _err_epoca) {
+				_err_epoca = _err_rete;
 				max_traning_sample_error = training_samples;
 			}
-			_max_single_traning_output_error_average += _max_single_traning_output_error;
+			_max_single_traning_output_error_average += _err_rete;
 		}
 		_epoca_index++;
 		cout_counter++;
@@ -364,11 +371,11 @@ void apprendi() {
 				"\nlast modified date: " << global_time_recorded <<
 				"\nerr_epoca=" << _err_epoca <<
 				" min._err_epoca= " << err_epoca_min_value <<
-				" _max_single_traning_output_error=" << _max_single_traning_output_error <<
-				" min._max_single_traning_output_error= " << err_min_rete <<
+				" _err_rete=" << _err_rete <<
+				" min._err_rete= " << err_min_rete <<
 				"\n";*/
 #endif
-			err_min_rete = _max_single_traning_output_error;
+			err_min_rete = _err_rete;
 			std::cout << "\nwrite on file\n";
 			write_weights_on_file();
 		}
@@ -415,15 +422,13 @@ void forward() {
 void back_propagate() {
 	float err_H[numberOf_H] = { 0.00f };
 	float delta = 0.00f;
-	_max_single_traning_output_error = 0.00f;
+	_err_rete = 0.00f;
 	// Calcolo del delta per il layer di output (attivazione lineare -> derivata = 1)
-	float single_training_output_error = 0.00f;
 	for (int j = 0; j < numberOf_Y; j++) {
-		single_training_output_error = d[j] - y[j];
-		if (fabs(single_training_output_error) > _max_single_traning_output_error) {
-			_max_single_traning_output_error = fabs(single_training_output_error);
+		if (fabs(d[j] - y[j]) > _err_rete) {
+			_err_rete = fabs(d[j] - y[j]);
 		}
-		delta = single_training_output_error;  // Derivata del layer output lineare è 1
+		delta = (d[j] - y[j]);  // Derivata del layer output lineare è 1
 		// Aggiornamento dei pesi del layer di output e accumulo dell'errore per il layer nascosto
 		for (int k = 0; k < numberOf_H; k++) {
 			W2[k][j] += (_epsilon * delta * h[k]);

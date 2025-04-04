@@ -45,7 +45,7 @@ float _err_rete = 0.00f;
 float _err_amm = 0.009f;
 float _epsilon = 0.001f;
 uint8_t const lines_per_training_sample = 8;
-uint16_t const training_samples = 68;
+uint16_t const training_samples = 337;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
@@ -65,8 +65,8 @@ float observed_data[6] = { 0.00f };
 //default_random_engine generator(time(0));
 //mt19937 gen;
 const string _relative_files_path = "72V-Battery-S11";
-//const string _files_name = "72V_Battery.csv";
-const string _files_name = "72V_Battery_Subset.csv";
+const string _files_name = "72V_Battery.csv";
+//const string _files_name = "72V_Battery_Subset.csv";
 //GLFWwindow* window;
 //std::vector<double> ascissa1;
 //std::vector<double> ascissa2;
@@ -130,7 +130,7 @@ float relu(float x) {
 //	}
 //}
 int main() {
-	
+
 	//window = InitWindow();
 #ifdef __linux__
 	// Sposta e massimizza la finestra
@@ -272,44 +272,32 @@ void predict() {
 	float normalized_observed_output[numberOf_Y] = { 0.00 };
 	float normalized_predicted_output[numberOf_Y] = { 0.00 };
 	int sampleIndex = 0;
-	while (true){
+	while (true) {
 		std::cout << "\nInsert file sample line (Ctrl+C to esc):\n";
 		std::cin >> sampleIndex;
 		get_sample_for_test(sampleIndex);
 		normalizeArray(observed_data, normalized_observed_output, numberOf_Y);
-	//	if (x[0] != 0.00f)
-	//	{
-	//		// Messaggio iniziale
-	//		std::cout << "\nInserisci i valori per Ampere e Watt-ora (Ctrl+C per uscire):\n";
-	//		// Input per x[0] (Ampere)
-	//		std::cout << "Inserisci il valore per x[0] (Ampere, float): ";
-	//		std::cin >> x[0];
-	//		// Input per x[1] (Watt-ora)
-	//		std::cout << "Inserisci il valore per x[1] (Watt-ora, float): ";
-	//		std::cin >> x[1];
-	//		// Stampa dei valori
-	//		std::cout << "\nHai inserito:\n";
-	//		std::cout << "x[0] (Ampere) = " << x[0] << "\n";
-	//		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";
-	//	}kd
-	x[0] = log(x[0] + 1.00f) / 10.00f;
-	x[1] = log(x[1] + 1.00f) / 10.00f;
-	forward();
-	normalizeArray(y, normalized_predicted_output, numberOf_Y);
-	float mse = mean_square_error(normalized_observed_output, normalized_predicted_output, numberOf_Y);
-	float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output, numberOf_Y);
-	float percentage = calculateErrorPercentage(mse, overall_mean);
-	float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
-	std::cout << "percentage = :" << percentage << "%\n";
-	std::cout << "varianza = :" << varianza << "\n";
-	// Stampa dei risultati
-	std::cout << "\n x[0] = " << exp(x[0] * 10.00f) << " x[1] = " << exp(x[1] * 10.00f) << "\n"
-		<< "\n y[0] = " << y[0] * 10.00f
-		<< "\n y[1] = " << y[1] * 10.00f
-		<< "\n y[2] = " << y[2] * 10.00f
-		<< "\n y[3] = " << y[3] * 10.00f
-		<< "\n y[4] = " << y[4] * 10.00f
-		<< "\n y[5] = " << y[5] * 10.00f;
+		x[0] = log(x[0] + 1.00f) / 10.00f;
+		x[1] = log(x[1] + 1.00f) / 10.00f;
+		forward();
+		for (int i = 0; i < 6; i++) {
+			y[i] = y[i] * 10.00f;
+		}
+		normalizeArray(y, normalized_predicted_output, numberOf_Y);
+		float mse = mean_square_error(observed_data, y, numberOf_Y);
+		float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output, numberOf_Y);
+		float percentage = calculateErrorPercentage(mse, overall_mean);
+		float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
+		std::cout << "percentage = :" << percentage << "%\n";
+		std::cout << "varianza = :" << varianza << "\n";
+		// Stampa dei risultati
+		std::cout << "\n x[0] = " << exp(x[0] * 10.00f) << " x[1] = " << exp(x[1] * 10.00f) << "\n"
+			<< "\n y[0] = " << y[0]
+			<< "\n y[1] = " << y[1]
+			<< "\n y[2] = " << y[2]
+			<< "\n y[3] = " << y[3]
+			<< "\n y[4] = " << y[4]
+			<< "\n y[5] = " << y[5];
 	}
 }
 //void print_graph(const char* window_name, float ordinata, const char description_ordinata[20], float ascissa, const char description_ascissa[20]) {
@@ -454,7 +442,7 @@ void back_propagate() {
 		hidden_bias[k] += _epsilon * delta;
 	}
 }
-void read_samples_from_file_diagram_battery(){
+void read_samples_from_file_diagram_battery() {
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
 	std::string filename = _relative_files_path + "/" + _files_name;
 	// Apertura del file
@@ -518,7 +506,7 @@ void read_samples_from_file_diagram_battery(){
 #elif _WIN32
 #else
 #endif
-	if ((training_block_index)+1 != training_samples){
+	if ((training_block_index)+1 != training_samples) {
 		cout << "\n\nALLERT!!!!!!! training sample different to index = \t" << training_block_index << "\n";
 #ifdef __linux__
 #elif _WIN32

@@ -51,8 +51,9 @@ float d[numberOf_Y] = { 0.00 };
 float amps_training[training_samples]{};
 float watts_hour_training[training_samples]{};
 float battery_out_training[training_samples][numberOf_Y]{};
-string global_time_recorded;
-default_random_engine generator(time(0));
+char global_time[9] = { 0 };
+//default_random_engine generator(time(0));
+//mt19937 gen;
 const string _relative_files_path = "72V-Battery-S11";
 //GLFWwindow* window;
 //std::vector<double> ascissa1;
@@ -64,7 +65,6 @@ const string _relative_files_path = "72V-Battery-S11";
 //std::vector<double> ordinata3;
 //std::vector<double> ordinata4;
 int _epoca_index = 0;
-mt19937 gen;
 float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
@@ -189,7 +189,7 @@ int main(){
 void init()
 {
 	random_device rd;
-	gen = mt19937(rd());
+	mt19937 gen = mt19937(rd());
 	double init_scale_input = sqrt(2.0 / numberOf_Y);
 	double init_scale_hidden = sqrt(2.0 / numberOf_H);
 	normal_distribution<double> dist(0.0, 1.0);
@@ -296,7 +296,6 @@ void apprendi() {
 	int cout_counter = 0;
 	auto start = std::chrono::system_clock::now();
 	read_samples_from_file_diagram_battery();
-	
 	do {
 		_err_epoca = 0.00f;
 		_max_single_traning_output_error_average = 0.00f;
@@ -653,6 +652,12 @@ float calculateVariance(const float* data, int size) {
 	}
 	// La varianza (per popolazione) è la media dei quadrati delle differenze
 	return sumSquaredDifferences / size;
+}
+void setTime() {
+	std::time_t now = std::time(nullptr);
+	std::tm local_time;
+	localtime_s(&local_time, &now);
+	std::strftime(global_time, sizeof(global_time), "%H:%M:%S", &local_time);
 }
 
 

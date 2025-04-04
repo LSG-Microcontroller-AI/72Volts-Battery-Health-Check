@@ -24,7 +24,7 @@
     <None Include="72V-Battery-S12\model.bin">
       <Filter>battery-S12-72V</Filter>
     </None>
-    <None Include="72V-Battery-S11\test.csv">
+    <None Include="72V-Battery-S11\72V_Battery_Subset.CSV">
       <Filter>battery-S11-72V</Filter>
     </None>
   </ItemGroup>

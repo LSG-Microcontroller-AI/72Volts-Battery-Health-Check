@@ -32,11 +32,20 @@ void back_propagate();
 void read_weights_from_file();
 void write_weights_on_file();
 void read_samples_from_file_diagram_battery();
+float overallMean(const float* arr1, const float* arr2, int size);
+void normalizeArray(float* array, float* normalized_array, int size);
+float mean_square_error(const float* arr1, const float* arr2, int size);
+float calculateVariance(const float* data, int size);
+float calculateErrorPercentage(float mse, float overallMean);
+int count_training_samples(int linesPerSample);
+bool get_sample_for_test(int sampleIndex);
+void setTime();
 float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.009f;
 float _epsilon = 0.001f;
-uint16_t const training_samples = 338;
+uint8_t const lines_per_training_sample = 8;
+uint16_t const training_samples = 68;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
@@ -51,10 +60,13 @@ float d[numberOf_Y] = { 0.00 };
 float amps_training[training_samples]{};
 float watts_hour_training[training_samples]{};
 float battery_out_training[training_samples][numberOf_Y]{};
-char global_time[9] = { 0 };
+char _global_time[9] = { 0 };
+float observed_data[6] = { 0.00f };
 //default_random_engine generator(time(0));
 //mt19937 gen;
 const string _relative_files_path = "72V-Battery-S11";
+//const string _files_name = "72V_Battery.csv";
+const string _files_name = "72V_Battery_Subset.csv";
 //GLFWwindow* window;
 //std::vector<double> ascissa1;
 //std::vector<double> ascissa2;
@@ -64,7 +76,6 @@ const string _relative_files_path = "72V-Battery-S11";
 //std::vector<double> ordinata2;
 //std::vector<double> ordinata3;
 //std::vector<double> ordinata4;
-
 float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
@@ -118,18 +129,26 @@ float relu(float x) {
 //		std::cout << "Errore OpenGL: " << err << std::endl;
 //	}
 //}
-int main(){
+int main() {
+	
 	//window = InitWindow();
 #ifdef __linux__
+	// Sposta e massimizza la finestra
+	system("xdotool search --onlyvisible --class 'gnome-terminal' windowmove 0 0 windowsize 1920 1080");
 #elif _WIN32
 	HWND consoleWindow = GetConsoleWindow();
 	// Sposta e massimizza la finestra
 	SetWindowPos(consoleWindow, nullptr, -1920, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
 	ShowWindow(consoleWindow, SW_MAXIMIZE);
 #endif
+	int number_of_training_samples = count_training_samples(lines_per_training_sample);
+	if (number_of_training_samples != training_samples) {
+		cout << "\nError on samples number!!!!!! current value is set to " << training_samples << " but should be " << number_of_training_samples << "\n";
+		return 0;
+	}
 	init();
 #ifdef __linux__
-	// no sound on linux
+	cout << "\a";
 #elif _WIN32
 	Beep(3000, 200);
 #endif
@@ -142,32 +161,32 @@ int main(){
 #elif _WIN32
 	response = _getch();
 #endif
-	if (response == 'e'){
+	if (response == 'e') {
 		read_weights_from_file();
 		predict();
 	}
-	if (response == 'c'){
+	if (response == 'c') {
 		cout << "\nmodel loaded.\n";
 		read_weights_from_file();
 		cout << "\nlast inserted epsilon is : " << _epsilon <<
-			" do you wanna change it? y or n\n"; 
+			" do you wanna change it? y or n\n";
 #ifdef __linux__
 		response = std::cin.get();
 		std::cin.ignore();
 #elif _WIN32
 		response = _getch();
 #endif
-		if (response == 'y'){
+		if (response == 'y') {
 			cout << "\ninsert new epsilon value : ";
 			cin >> _epsilon;
 			cout << "\n epsilon changed\n";
 		}
-		else{
+		else {
 			cout << "\n epsilon not changed\n";
 		}
 		apprendi();
 	}
-	if (response == 'n'){
+	if (response == 'n') {
 		cout << "ATTENTION !!!!!!!!!!!!! are you sure to restart learning? press y to continue !!!!!!!!!!!!!!!!!!!\n\n";
 #ifdef __linux__
 		response = std::cin.get();
@@ -175,19 +194,18 @@ int main(){
 #elif _WIN32
 		response = _getch();
 #endif
-		if (response == 'y'){
+		if (response == 'y') {
 			cout << "\n model overwritten\n";
 			apprendi();
 		}
-		else{
+		else {
 			cout << "\nprocess blocked.\n";
 			/*read_weights_from_file();
 			apprendi();*/
 		}
 	}
 }
-void init()
-{
+void init() {
 	random_device rd;
 	mt19937 gen = mt19937(rd());
 	double init_scale_input = sqrt(2.0 / numberOf_Y);
@@ -250,33 +268,48 @@ void init()
 		}
 	}
 }
-void predict()
-{
-	while (true)
-	{
-		// Messaggio iniziale
-		std::cout << "\nInserisci i valori per Ampere e Watt-ora (Ctrl+C per uscire):\n";
-		// Input per x[0] (Ampere)
-		std::cout << "Inserisci il valore per x[0] (Ampere, float): ";
-		std::cin >> x[0];
-		// Input per x[1] (Watt-ora)
-		std::cout << "Inserisci il valore per x[1] (Watt-ora, float): ";
-		std::cin >> x[1];
-		// Stampa dei valori
-		std::cout << "\nHai inserito:\n";
-		std::cout << "x[0] (Ampere) = " << x[0] << "\n";
-		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";
-		x[0] = log(x[0] + 1.00f) / 10.00f;
-		x[1] = log(x[1] + 1.00f) / 10.00f;
-		forward();
-		// Stampa dei risultati
-		std::cout << "\n x[0] = " << exp(x[0] * 10.00f) << " x[1] = " << exp(x[1] * 10.00f) << "\n"
-			<< "\n y[0] = " << y[0] * 10.00f
-			<< "\n y[1] = " << y[1] * 10.00f
-			<< "\n y[2] = " << y[2] * 10.00f
-			<< "\n y[3] = " << y[3] * 10.00f
-			<< "\n y[4] = " << y[4] * 10.00f
-			<< "\n y[5] = " << y[5] * 10.00f;
+void predict() {
+	float normalized_observed_output[numberOf_Y] = { 0.00 };
+	float normalized_predicted_output[numberOf_Y] = { 0.00 };
+	int sampleIndex = 0;
+	while (true){
+		std::cout << "\nInsert file sample line (Ctrl+C to esc):\n";
+		std::cin >> sampleIndex;
+		get_sample_for_test(sampleIndex);
+		normalizeArray(observed_data, normalized_observed_output, numberOf_Y);
+	//	if (x[0] != 0.00f)
+	//	{
+	//		// Messaggio iniziale
+	//		std::cout << "\nInserisci i valori per Ampere e Watt-ora (Ctrl+C per uscire):\n";
+	//		// Input per x[0] (Ampere)
+	//		std::cout << "Inserisci il valore per x[0] (Ampere, float): ";
+	//		std::cin >> x[0];
+	//		// Input per x[1] (Watt-ora)
+	//		std::cout << "Inserisci il valore per x[1] (Watt-ora, float): ";
+	//		std::cin >> x[1];
+	//		// Stampa dei valori
+	//		std::cout << "\nHai inserito:\n";
+	//		std::cout << "x[0] (Ampere) = " << x[0] << "\n";
+	//		std::cout << "x[1] (Watt-ora) = " << x[1] << "\n";
+	//	}kd
+	x[0] = log(x[0] + 1.00f) / 10.00f;
+	x[1] = log(x[1] + 1.00f) / 10.00f;
+	forward();
+	normalizeArray(y, normalized_predicted_output, numberOf_Y);
+	float mse = mean_square_error(normalized_observed_output, normalized_predicted_output, numberOf_Y);
+	float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output, numberOf_Y);
+	float percentage = calculateErrorPercentage(mse, overall_mean);
+	float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
+	std::cout << "percentage = :" << percentage << "%\n";
+	std::cout << "varianza = :" << varianza << "\n";
+	// Stampa dei risultati
+	std::cout << "\n x[0] = " << exp(x[0] * 10.00f) << " x[1] = " << exp(x[1] * 10.00f) << "\n"
+		<< "\n y[0] = " << y[0] * 10.00f
+		<< "\n y[1] = " << y[1] * 10.00f
+		<< "\n y[2] = " << y[2] * 10.00f
+		<< "\n y[3] = " << y[3] * 10.00f
+		<< "\n y[4] = " << y[4] * 10.00f
+		<< "\n y[5] = " << y[5] * 10.00f;
 	}
 }
 //void print_graph(const char* window_name, float ordinata, const char description_ordinata[20], float ascissa, const char description_ascissa[20]) {
@@ -293,6 +326,7 @@ void predict()
 //	open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
 //}
 void apprendi() {
+	int max_error_file_index_line = 0;
 	int _epoca_index = 0;
 	int cout_counter = 0;
 	auto start = std::chrono::system_clock::now();
@@ -306,9 +340,7 @@ void apprendi() {
 		average_err_rete = 0.00f;
 		varianza_err_rete = 0.00f;
 		_max_single_traning_output_error_average = 0.00f;
-		uint16_t max_traning_sample_error = 0;
-		for (unsigned long p = 0; p < training_samples; p++)
-		{
+		for (unsigned long p = 0; p < training_samples; p++) {
 			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
 			for (int i = 0; i < numberOf_Y; i++) {
@@ -318,72 +350,44 @@ void apprendi() {
 			back_propagate();
 			if (_err_rete > _err_epoca) {
 				_err_epoca = _err_rete;
-				max_traning_sample_error = training_samples;
+				max_error_file_index_line = ((p) * 8) + 1;
 			}
-			_max_single_traning_output_error_average += _err_rete;
+			listOfErr_rete[p] = _err_rete;
+			average_err_rete += _err_rete;
 		}
 		_epoca_index++;
+		average_err_rete /= training_samples;
+		for (unsigned long p = 0; p < training_samples; p++) {
+			varianza_err_rete += pow(listOfErr_rete[p] - average_err_rete, 2);
+		}
+		varianza_err_rete /= training_samples;
+		deviazione_std = sqrt(varianza_err_rete);
 		cout_counter++;
 		is_on_wtrite_file = false;
-		if (cout_counter == 1000) {
-			_max_single_traning_output_error_average = _max_single_traning_output_error_average / training_samples;
-			cout << "epoca : " << _epoca_index << "\n\n";
-			cout << "media di max errore di traning : " << _max_single_traning_output_error_average << "\n\n";
-			cout << "max errore di traning : " << _err_epoca << "\n\n";
-			cout << "con epsilon : " << _epsilon << "\n\n";
-			cout << "max error on traning sample : " << max_traning_sample_error << "\n\n";
-			cout_counter = 0;
-			if ((_err_epoca_min_value > _err_epoca) && _err_epoca > 0.00f){
-				is_on_wtrite_file = true;
-				_err_epoca_min_value = _err_epoca;
-			}
+		if (_err_epoca_min_value > _err_epoca) {
+			is_on_wtrite_file = true;
+			_err_epoca_min_value = _err_epoca;
 		}
-		if (is_on_wtrite_file)
-		{
-			std::time_t now = std::time(nullptr);
-			std::tm local_time;
-#ifdef __linux__
-			if (localtime_r(&now, &local_time) == nullptr)
-			{
-				std::cerr << "Errore nella conversione del tempo.\n";
-			}
-			else
-			{
-				// Stampa il tempo locale in formato leggibile
-				std::cout << "Anno: " << (1900 + local_time.tm_year) << "\n";
-				std::cout << "Mese: " << (1 + local_time.tm_mon) << "\n";
-				std::cout << "Giorno: " << local_time.tm_mday << "\n";
-				std::cout << "Ora: " << local_time.tm_hour << "\n";
-				std::cout << "Minuti: " << local_time.tm_min << "\n";
-				std::cout << "Secondi: " << local_time.tm_sec << "\n";
-			}
-#elif _WIN32
-			/*if (localtime_s(&local_time, &now) != 0) {
-				std::cerr << "Errore nella conversione del tempo.\n";
-			}*/
-			/*global_time_recorded = std::to_string(local_time.tm_mday) + "/" +
-				std::to_string(local_time.tm_mon + 1) + "/" +
-				std::to_string(local_time.tm_year + 1900) + " " +
-				std::to_string(local_time.tm_hour) + ":" +
-				std::to_string(local_time.tm_min) + ":" +
-				std::to_string(local_time.tm_sec);
+		if (cout_counter == 10000) {
 			std::cout << "\nepoca:" << _epoca_index <<
-				"\nlast modified date: " << global_time_recorded <<
 				"\nerr_epoca=" << _err_epoca <<
-				" min._err_epoca= " << err_epoca_min_value <<
-				" _err_rete=" << _err_rete <<
-				" min._err_rete= " << err_min_rete <<
-				"\n";*/
-#endif
-			err_min_rete = _err_rete;
-			std::cout << "\nwrite on file\n";
+				"\nmin. err_epoca=" << _err_epoca_min_value <<
+				"\nlast time write on file = " << _global_time <<
+				"\nvarianza di errore di rete = " << varianza_err_rete <<
+				"\nmedia di errore di rete = " << average_err_rete <<
+				"\ndeviazione standard errore di rete = " << deviazione_std <<
+				"\nmax err_epoca is on sample line = " << max_error_file_index_line <<
+				"\npercentage dev.standard err_rete / media err_rete = " << (deviazione_std / average_err_rete) * 100 << "%" <<
+				"\nepsilon=" << _epsilon << "\n";
+			cout_counter = 0;
+		}
+		if (is_on_wtrite_file) {
+			setTime();
 			write_weights_on_file();
 		}
 	} while (_err_epoca > _err_amm);
-	auto end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = end - start;
-	double sample_time = elapsed_seconds.count();
-	std::cout << "learning time : " << (int)(sample_time / 60) << " minutes.\n";
+	setTime();
+	std::cout << "learning stopped at : " << _global_time;
 #ifdef __linux__
 	// linux code goes here
 #elif _WIN32
@@ -450,10 +454,9 @@ void back_propagate() {
 		hidden_bias[k] += _epsilon * delta;
 	}
 }
-void read_samples_from_file_diagram_battery()
-{
+void read_samples_from_file_diagram_battery(){
 	//std::cout << "Directory corrente: " << std::filesystem::current_path() << std::endl;
-	std::string filename = _relative_files_path + "/" + "72V_Battery.CSV";//"72V_Battery.CSV";
+	std::string filename = _relative_files_path + "/" + _files_name;
 	// Apertura del file
 	std::ifstream file(filename);
 	// Verifica se il file è stato aperto correttamente
@@ -515,8 +518,7 @@ void read_samples_from_file_diagram_battery()
 #elif _WIN32
 #else
 #endif
-	if ((training_block_index)+1 != training_samples)
-	{
+	if ((training_block_index)+1 != training_samples){
 		cout << "\n\nALLERT!!!!!!! training sample different to index = \t" << training_block_index << "\n";
 #ifdef __linux__
 #elif _WIN32
@@ -570,23 +572,23 @@ void read_weights_from_file()
 		//in.read((char*)&h[numberOf_H - 1], sizeof(float));
 	}
 }
-void write_weights_on_file(){
+void write_weights_on_file() {
 	std::ofstream fw(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
-	if (fw.good()){
-		for (int i = 0; i < numberOf_X; i++){
-			for (int k = 0; k < numberOf_H; k++){
+	if (fw.good()) {
+		for (int i = 0; i < numberOf_X; i++) {
+			for (int k = 0; k < numberOf_H; k++) {
 				fw.write((char*)&W1[i][k], sizeof(float));
 			}
 		}
-		for (int j = 0; j < numberOf_Y; j++){
-			for (int k = 0; k < numberOf_H; k++){
+		for (int j = 0; j < numberOf_Y; j++) {
+			for (int k = 0; k < numberOf_H; k++) {
 				fw.write((char*)&W2[k][j], sizeof(float));
 			}
 		}
-		for (int k = 0; k < numberOf_H; k++){
+		for (int k = 0; k < numberOf_H; k++) {
 			fw.write((char*)&hidden_bias[k], sizeof(float));
 		}
-		for (int j = 0; j < numberOf_Y; j++){
+		for (int j = 0; j < numberOf_Y; j++) {
 			fw.write((char*)&output_bias[j], sizeof(float));
 		}
 		fw.write((char*)&_err_epoca_min_value, sizeof(float));
@@ -662,8 +664,135 @@ void setTime() {
 	std::time_t now = std::time(nullptr);
 	std::tm local_time;
 	localtime_s(&local_time, &now);
-	std::strftime(global_time, sizeof(global_time), "%H:%M:%S", &local_time);
+	std::strftime(_global_time, sizeof(_global_time), "%H:%M:%S", &local_time);
 }
+bool get_sample_for_test(int sampleIndex) {
+	// Composizione del path completo del file
+	std::string filename = _relative_files_path + "/" + _files_name;
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Errore nell'apertura del file: " << filename << std::endl;
+		return false;
+	}
+	// Ogni campione è composto da 8 righe; calcoliamo la riga iniziale del campione.
+	//const int linesPerSample = 8;
+	int startLine = sampleIndex - 1;// *linesPerSample;
+	// Salta le righe fino al campione desiderato
+	std::string dummy;
+	for (int i = 0; i < startLine; ++i) {
+		if (!std::getline(file, dummy)) {
+			std::cerr << "Errore: file terminato prematuramente durante lo skip fino al campione "
+				<< sampleIndex << std::endl;
+			return false;
+		}
+	}
+	std::string line;
+	std::istringstream ss;
+	std::string token;
+	// Legge le prime 6 righe per aggiornare observed_data
+	for (int i = 0; i < 6; ++i) {
+		if (!std::getline(file, line)) {
+			std::cerr << "Errore: file terminato prematuramente nella lettura di observed_data, campione "
+				<< sampleIndex << std::endl;
+			return false;
+		}
+		if (line.empty()) {
+			--i;
+			continue;
+		}
+		ss.clear();
+		ss.str(line);
+		// Legge il primo token (es. "0")
+		std::getline(ss, token, ';');
+		// Legge il secondo token (es. "B0", "B1", ecc.) e lo scarta
+		std::getline(ss, token, ';');
+		// Legge il terzo token (il valore da utilizzare)
+		std::getline(ss, token, ';');
+		try {
+			observed_data[i] = std::stof(token);
+		}
+		catch (const std::exception& e) {
+			std::cerr << "Errore nella conversione del valore nella riga " << (startLine + i + 1)
+				<< ": \"" << token << "\"." << std::endl;
+			return false;
+		}
+	}
+
+	// Legge la settima riga per aggiornare x[0]
+	if (!std::getline(file, line)) {
+		std::cerr << "Errore: file terminato prematuramente nella lettura di x[0] (riga "
+			<< (startLine + 7) << ")." << std::endl;
+		return false;
+	}
+	while (line.empty() && std::getline(file, line)) {}
+	ss.clear();
+	ss.str(line);
+	// Legge il primo token (es. "watts")
+	std::getline(ss, token, ';');
+	// Salta il secondo token
+	std::getline(ss, token, ';');
+	// Legge il terzo token (il valore per x[0])
+	std::getline(ss, token, ';');
+	try {
+		x[1] = std::stof(token);
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Errore nella conversione del valore nella riga " << (startLine + 7)
+			<< " per x[0]: \"" << token << "\"." << std::endl;
+		return false;
+	}
+
+	// Legge l'ottava riga per aggiornare x[1]
+	if (!std::getline(file, line)) {
+		std::cerr << "Errore: file terminato prematuramente nella lettura di x[1] (riga "
+			<< (startLine + 8) << ")." << std::endl;
+		return false;
+	}
+	while (line.empty() && std::getline(file, line)) {}
+	ss.clear();
+	ss.str(line);
+	// Legge il primo token (es. "amps")
+	std::getline(ss, token, ';');
+	// Salta il secondo token
+	std::getline(ss, token, ';');
+	// Legge il terzo token (il valore per x[1])
+	std::getline(ss, token, ';');
+	try {
+		x[0] = std::stof(token);
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Errore nella conversione del valore nella riga " << (startLine + 8)
+			<< " per x[1]: \"" << token << "\"." << std::endl;
+		return false;
+	}
+	file.close();
+	return true;
+}
+int count_training_samples(int linesPerSample) {
+	// Componi il percorso completo del file
+	std::string filename = _relative_files_path + "/" + _files_name;
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		std::cerr << "Errore nell'apertura del file: " << filename << std::endl;
+		return -1;
+	}
+	int totalLines = 0;
+	std::string line;
+	// Conta solo le righe non vuote
+	while (std::getline(file, line)) {
+		if (!line.empty())
+			++totalLines;
+	}
+	file.close();
+	// Verifica che il numero totale di righe sia divisibile per linesPerSample
+	if (totalLines % linesPerSample != 0) {
+		std::cerr << "Il numero totale di righe (" << totalLines
+			<< ") non è divisibile per " << linesPerSample << std::endl;
+		return -1;
+	}
+	return totalLines / linesPerSample;
+}
+
 
 
 

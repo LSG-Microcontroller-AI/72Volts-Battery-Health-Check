@@ -133,7 +133,7 @@ int main() {
 	//window = InitWindow();
 #ifdef __linux__
 	// Sposta e massimizza la finestra
-	system("xdotool search --onlyvisible --class 'gnome-terminal' windowmove 0 0 windowsize 1920 1080");
+	//system("xdotool search --onlyvisible --class 'gnome-terminal' windowmove 0 0 windowsize 1920 1080");
 #elif _WIN32
 	HWND consoleWindow = GetConsoleWindow();
 	// Sposta e massimizza la finestra

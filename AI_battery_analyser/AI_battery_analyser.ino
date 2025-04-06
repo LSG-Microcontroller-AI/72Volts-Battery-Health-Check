@@ -68,8 +68,8 @@ void loop() {
 	uint8_t percentage = calculateErrorPercentage(mse, overall_mean);
 	Serial.print(F("percentage : ")); Serial.println(percentage);
 	//Serial.println(mse, 10);
-	//float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
-	//Serial.println(varianza);
+	float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
+	Serial.print(F("dev.stand.varianza"));Serial.println(sqrt(varianza));
 	//print_normalizer_processed_data();
 	//print_normalizer_model_data();
 	delay(2000);

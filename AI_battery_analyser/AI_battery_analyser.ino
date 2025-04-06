@@ -44,7 +44,6 @@ void setup() {
 	observed_data[3] = 1.81f;
 	observed_data[4] = 1.93f;
 	observed_data[5] = 1.81f;
-
 }
 // the loop function runs over and over again until power down or reset
 void loop() {
@@ -58,24 +57,24 @@ void loop() {
 	x[0] = log(x[0] + 1.0f) / 10.0f;
 	x[1] = log(x[1] + 1.0f) / 10.0f;
 	forward();
-  for (int i = 0; i < 6; i++) {
-    y[i] = y[i] * 10.00f;
-  }
-	print_model_data();
+	for (int i = 0; i < 6; i++) {
+		y[i] = y[i] * 10.00f;
+	}
+	//print_model_data();
 	normalizeArray(observed_data, normalized_observed_output, numberOf_Y);
 	normalizeArray(y, normalized_predicted_output, numberOf_Y);
 	float mse = meanSquaredError(observed_data, y, numberOf_Y);
-	float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output,numberOf_Y);
+	float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output, numberOf_Y);
 	uint8_t percentage = calculateErrorPercentage(mse, overall_mean);
-	Serial.print(F("percentage : "));Serial.println(percentage);
-	Serial.println(mse, 10);
-	float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
-	Serial.println(varianza);
+	Serial.print(F("percentage : ")); Serial.println(percentage);
+	//Serial.println(mse, 10);
+	//float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
+	//Serial.println(varianza);
 	//print_normalizer_processed_data();
 	//print_normalizer_model_data();
 	delay(2000);
 }
-void print_model_data(){
+void print_model_data() {
 	Serial.println();
 	Serial.print(F("x[0] = ")); Serial.print(exp(x[0] * 10.00f)); Serial.print(F("    x[1] = ")); Serial.println(exp(x[1] * 10.00f));
 	Serial.print(F("\n\ny[0] = ")); Serial.println(y[0]);
@@ -236,7 +235,7 @@ void processDataStream(const byte* stream, int streamSize) {
 			float values[numFloats];
 			memcpy(values, stream + i + headerSize, dataSize);
 			float transmittedChecksum;
-			memcpy(& transmittedChecksum, stream + i + headerSize + dataSize, checksumSize);
+			memcpy(&transmittedChecksum, stream + i + headerSize + dataSize, checksumSize);
 			float computedChecksum = computeChecksum(values, numFloats);
 			if (fabs(transmittedChecksum - computedChecksum) < 0.0001f) {
 				Serial.print("Packet valido trovato a indice ");

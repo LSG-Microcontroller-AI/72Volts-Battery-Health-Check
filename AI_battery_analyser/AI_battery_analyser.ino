@@ -16,8 +16,8 @@ extern void* __brkval;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
-float normalized_observed_data[numberOf_Y] = { 0.00 };
-float y_normalized_model_data[numberOf_Y] = { 0.00 };
+float normalized_observed_output[numberOf_Y] = { 0.00 };
+float normalized_predicted_output[numberOf_Y] = { 0.00 };
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
 float W1[numberOf_X][numberOf_H] = { 0.00 };
@@ -59,14 +59,14 @@ void loop() {
 	x[1] = log(x[1] + 1.0f) / 10.0f;
 	forward();
 	print_model_data();
-	normalizeArray(observed_data, normalized_observed_data, numberOf_Y);
-	normalizeArray(y, y_normalized_model_data, numberOf_Y);
-	float mse = meanSquaredError(normalized_observed_data, y_normalized_model_data, numberOf_Y);
-	float overall_mean = overallMean(normalized_observed_data, y_normalized_model_data,numberOf_Y);
+	normalizeArray(observed_data, normalized_observed_output, numberOf_Y);
+	normalizeArray(y, normalized_predicted_output, numberOf_Y);
+	float mse = meanSquaredError(observed_data, y, numberOf_Y);
+	float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output,numberOf_Y);
 	uint8_t percentage = calculateErrorPercentage(mse, overall_mean);
 	Serial.println(percentage);
 	Serial.println(mse, 10);
-	float varianza = calculateVariance(normalized_observed_data, numberOf_Y);
+	float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
 	Serial.println(varianza);
 	//print_normalizer_processed_data();
 	//print_normalizer_model_data();
@@ -85,22 +85,22 @@ void print_model_data(){
 }
 void print_normalizer_processed_data() {
 	Serial.println();
-	Serial.print(F("y_normalized[0] = ")); Serial.println(normalized_observed_data[0]);
-	Serial.print(F("y_normalized[1] = "));  Serial.println(normalized_observed_data[1]);
-	Serial.print(F("y_normalized[2] = "));  Serial.println(normalized_observed_data[2]);
-	Serial.print(F("y_normalized[3] = "));  Serial.println(normalized_observed_data[3]);
-	Serial.print(F("y_normalized[4] = "));  Serial.println(normalized_observed_data[4]);
-	Serial.print(F("y_normalized[5] = "));  Serial.println(normalized_observed_data[5]);
+	Serial.print(F("y_normalized[0] = ")); Serial.println(normalized_observed_output[0]);
+	Serial.print(F("y_normalized[1] = "));  Serial.println(normalized_observed_output[1]);
+	Serial.print(F("y_normalized[2] = "));  Serial.println(normalized_observed_output[2]);
+	Serial.print(F("y_normalized[3] = "));  Serial.println(normalized_observed_output[3]);
+	Serial.print(F("y_normalized[4] = "));  Serial.println(normalized_observed_output[4]);
+	Serial.print(F("y_normalized[5] = "));  Serial.println(normalized_observed_output[5]);
 	delay(2000);
 }
 void print_normalizer_model_data() {
 	Serial.println();
-	Serial.print(F("y_normalized_model_data[0] = ")); Serial.println(y_normalized_model_data[0]);
-	Serial.print(F("y_normalized_model_data[1] = "));  Serial.println(y_normalized_model_data[1]);
-	Serial.print(F("y_normalized_model_data[2] = "));  Serial.println(y_normalized_model_data[2]);
-	Serial.print(F("y_normalized_model_data[3] = "));  Serial.println(y_normalized_model_data[3]);
-	Serial.print(F("y_normalized_model_data[4] = "));  Serial.println(y_normalized_model_data[4]);
-	Serial.print(F("y_normalized_model_data[5] = "));  Serial.println(y_normalized_model_data[5]);
+	Serial.print(F("y_normalized_model_data[0] = ")); Serial.println(normalized_predicted_output[0]);
+	Serial.print(F("y_normalized_model_data[1] = "));  Serial.println(normalized_predicted_output[1]);
+	Serial.print(F("y_normalized_model_data[2] = "));  Serial.println(normalized_predicted_output[2]);
+	Serial.print(F("y_normalized_model_data[3] = "));  Serial.println(normalized_predicted_output[3]);
+	Serial.print(F("y_normalized_model_data[4] = "));  Serial.println(normalized_predicted_output[4]);
+	Serial.print(F("y_normalized_model_data[5] = "));  Serial.println(normalized_predicted_output[5]);
 	delay(2000);
 }
 float relu(float x) {
@@ -220,7 +220,6 @@ float computeChecksum(const float* data, int count) {
 	}
 	return sum;
 }
-
 // Processa un flusso di byte alla ricerca di pacchetti validi.
 // Per ogni pacchetto trovato, controlla marker, checksum e stampa i dati.
 // Costruisce un pacchetto nel buffer "packet" con i float forniti.

@@ -38,12 +38,12 @@ SoftwareSerial mySerial(10, 11); // Definizione: RX, TX
 void setup() {
 	Serial.begin(9600);
 	read_weights_from_eeprom();
-	observed_data[0] = 1.75f;
-	observed_data[1] = 1.34f;
-	observed_data[2] = 1.99f;
-	observed_data[3] = 1.90f;
-	observed_data[4] = 1.85f;
-	observed_data[5] = 1.93f;
+	observed_data[0] = 1.91f;
+	observed_data[1] = 1.84f;
+	observed_data[2] = 1.94f;
+	observed_data[3] = 1.81f;
+	observed_data[4] = 1.93f;
+	observed_data[5] = 1.81f;
 
 }
 // the loop function runs over and over again until power down or reset
@@ -53,18 +53,21 @@ void loop() {
 	Serial.print(F("RAM libera: "));
 	Serial.print(ram_libera);
 	Serial.println(F(" byte"));
-	x[0] = 23.00f;
-	x[1] = 246.00f;
+	x[0] = 29.00f;
+	x[1] = 479.00f;
 	x[0] = log(x[0] + 1.0f) / 10.0f;
 	x[1] = log(x[1] + 1.0f) / 10.0f;
 	forward();
+  for (int i = 0; i < 6; i++) {
+    y[i] = y[i] * 10.00f;
+  }
 	print_model_data();
 	normalizeArray(observed_data, normalized_observed_output, numberOf_Y);
 	normalizeArray(y, normalized_predicted_output, numberOf_Y);
 	float mse = meanSquaredError(observed_data, y, numberOf_Y);
 	float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output,numberOf_Y);
 	uint8_t percentage = calculateErrorPercentage(mse, overall_mean);
-	Serial.println(percentage);
+	Serial.print(F("percentage : "));Serial.println(percentage);
 	Serial.println(mse, 10);
 	float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
 	Serial.println(varianza);
@@ -75,12 +78,12 @@ void loop() {
 void print_model_data(){
 	Serial.println();
 	Serial.print(F("x[0] = ")); Serial.print(exp(x[0] * 10.00f)); Serial.print(F("    x[1] = ")); Serial.println(exp(x[1] * 10.00f));
-	Serial.print(F("\n\ny[0] = ")); Serial.println(y[0] * 10.00f);
-	Serial.print(F("y[1] = ")); Serial.println(y[1] * 10.00f);
-	Serial.print(F("y[2] = ")); Serial.println(y[2] * 10.00f);
-	Serial.print(F("y[3] = ")); Serial.println(y[3] * 10.00f);
-	Serial.print(F("y[4] = ")); Serial.println(y[4] * 10.00f);
-	Serial.print(F("y[5] = ")); Serial.println(y[5] * 10.00f);
+	Serial.print(F("\n\ny[0] = ")); Serial.println(y[0]);
+	Serial.print(F("y[1] = ")); Serial.println(y[1]);
+	Serial.print(F("y[2] = ")); Serial.println(y[2]);
+	Serial.print(F("y[3] = ")); Serial.println(y[3]);
+	Serial.print(F("y[4] = ")); Serial.println(y[4]);
+	Serial.print(F("y[5] = ")); Serial.println(y[5]);
 	delay(2000);
 }
 void print_normalizer_processed_data() {

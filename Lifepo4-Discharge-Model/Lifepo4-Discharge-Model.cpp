@@ -130,7 +130,6 @@ float relu(float x) {
 //	}
 //}
 int main() {
-
 	//window = InitWindow();
 #ifdef __linux__
 	// Sposta e massimizza la finestra
@@ -212,12 +211,10 @@ void init() {
 	double init_scale_hidden = sqrt(2.0 / numberOf_H);
 	normal_distribution<double> dist(0.0, 1.0);
 	//-----------------------------------	bias initialization
-	for (int i = 0; i < numberOf_Y; i++)
-	{
+	for (int i = 0; i < numberOf_Y; i++){
 		output_bias[i] = 0.1f;
 	}
-	for (int i = 0; i < numberOf_H; i++)
-	{
+	for (int i = 0; i < numberOf_H; i++){
 		hidden_bias[i] = 0.1f;
 	}
 	//-----------------------------------	console input values + Hidden bias values
@@ -527,8 +524,7 @@ void read_samples_from_file_diagram_battery() {
 	}
 	file.close();
 }
-void read_weights_from_file()
-{
+void read_weights_from_file(){
 	std::ifstream in(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
 	if (in.good())
 	{
@@ -651,7 +647,13 @@ float calculateVariance(const float* data, int size) {
 void setTime() {
 	std::time_t now = std::time(nullptr);
 	std::tm local_time;
+#ifdef __linux__
+	// Usa localtime_r per Linux
+	struct tm timeinfo;
+	localtime_r(&now, &local_time);
+#elif __WIN32
 	localtime_s(&local_time, &now);
+#endif
 	std::strftime(_global_time, sizeof(_global_time), "%H:%M:%S", &local_time);
 }
 bool get_sample_for_test(int sampleIndex) {

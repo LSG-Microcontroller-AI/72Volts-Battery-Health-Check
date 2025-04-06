@@ -69,7 +69,7 @@ void loop() {
 	Serial.print(F("percentage : ")); Serial.println(percentage);
 	//Serial.println(mse, 10);
 	float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
-	Serial.print(F("dev.stand.varianza"));Serial.println(sqrt(varianza));
+	Serial.print(F("dev.stand.varianza : "));Serial.println(sqrt(varianza));
 	//print_normalizer_processed_data();
 	//print_normalizer_model_data();
 	delay(2000);

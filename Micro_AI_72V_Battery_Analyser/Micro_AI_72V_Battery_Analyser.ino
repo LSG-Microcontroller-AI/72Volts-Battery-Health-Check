@@ -14,7 +14,7 @@ extern char __heap_start;
 extern void* __brkval;
 #include <EEPROM.h>
 const uint8_t numberOf_X = 2;
-const uint8_t numberOf_H = 25;
+const uint8_t numberOf_H = 10;
 const uint8_t numberOf_Y = 6;
 float normalized_observed_output[numberOf_Y] = { 0.00 };
 float normalized_predicted_output[numberOf_Y] = { 0.00 };
@@ -105,8 +105,9 @@ void print_normalizer_model_data() {
 	Serial.print(F("y_normalized_model_data[5] = "));  Serial.println(normalized_predicted_output[5]);
 	delay(2000);
 }
-float relu(float x) {
-	return (x > 0) ? x : 0;
+float sigmoid_activation(float Z) {
+	//return 1.00f / (1.00f + pow(M_E, (Z * -1)));
+	return 1.00f / (1.00f + exp((Z * -1)));
 }
 void forward() {
 	for (int k = 0; k < (numberOf_H); k++) {
@@ -116,7 +117,7 @@ void forward() {
 		}
 		//insert X bias
 		Zk += hidden_bias[k];
-		h[k] = relu(Zk);
+		h[k] = sigmoid_activation(Zk);
 	}
 	for (int j = 0; j < numberOf_Y; j++) {
 		float Zj = 0.00f;
@@ -125,7 +126,7 @@ void forward() {
 		}
 		//insert H bias
 		Zj += output_bias[j];
-		y[j] = Zj;
+		y[j] = sigmoid_activation(Zj);
 	}
 }
 void read_weights_from_eeprom() {

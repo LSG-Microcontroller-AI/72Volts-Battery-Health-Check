@@ -47,7 +47,7 @@ float _epsilon = 0.001f;
 uint8_t const lines_per_training_sample = 8;
 uint16_t const training_samples = 337;
 const uint8_t numberOf_X = 2;
-const uint8_t numberOf_H = 25;
+const uint8_t numberOf_H = 10;
 const uint8_t numberOf_Y = 6;
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
@@ -80,9 +80,22 @@ float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
 float _err_epoca_min_value = FLT_MAX;
-float relu(float x) {
-	return (x > 0) ? x : 0;
+double _lower_bound_xavier;
+double _upper_bound_xavier;
+default_random_engine generator(time(0));
+double xavier_init(double n_x, double n_y) {
+	return sqrt(6.0) / sqrt(n_x + n_y);
 }
+float sigmoid_activation(float Z) {
+	//return 1.00f / (1.00f + pow(M_E, (Z * -1)));
+	return 1.00f / (1.00f + exp((Z * -1)));
+}
+double get_random_number_from_xavier() {
+	uniform_real_distribution<double> distribution(_lower_bound_xavier, _upper_bound_xavier);
+	double random_value = distribution(generator);
+	return random_value;
+}
+
 // Derivata della funzione ReLU
 //GLFWwindow* InitWindow() {
 //	if (!glfwInit()) {
@@ -205,11 +218,15 @@ int main() {
 	}
 }
 void init() {
-	random_device rd;
-	mt19937 gen = mt19937(rd());
-	double init_scale_input = sqrt(2.0 / numberOf_Y);
-	double init_scale_hidden = sqrt(2.0 / numberOf_H);
-	normal_distribution<double> dist(0.0, 1.0);
+	double param = xavier_init(numberOf_X, numberOf_Y);
+	cout << "xavier glorot param : " << param << "\n\n";
+	_lower_bound_xavier = -param;
+	_upper_bound_xavier = param;
+	//random_device rd;
+	//mt19937 gen = mt19937(rd());
+	//double init_scale_input = sqrt(2.0 / numberOf_Y);
+	//double init_scale_hidden = sqrt(2.0 / numberOf_H);
+	//normal_distribution<double> dist(0.0, 1.0);
 	//-----------------------------------	bias initialization
 	for (int i = 0; i < numberOf_Y; i++){
 		output_bias[i] = 0.1f;
@@ -251,7 +268,7 @@ void init() {
 	{
 		for (int k = 0; k < numberOf_H; k++)
 		{
-			W1[i][k] = dist(gen) * init_scale_input;
+			W1[i][k] = get_random_number_from_xavier();
 			cout << "W1[" << i << "]" << "[" << k << "]" << "=" << W1[i][k] << "\n";
 		}
 	}
@@ -260,7 +277,7 @@ void init() {
 	{
 		for (int j = 0; j < numberOf_Y; j++)
 		{
-			W2[k][j] = dist(gen) * init_scale_hidden;
+			W2[k][j] = get_random_number_from_xavier();
 			cout << "W2[" << k << "]" << "[" << j << "]" << "=" << W2[k][j] << "\n";
 		}
 	}
@@ -396,7 +413,7 @@ void forward() {
 		}
 		//insert X bias
 		Zk += hidden_bias[k];
-		h[k] = relu(Zk);
+		h[k] = sigmoid_activation(Zk);
 	}
 	for (int j = 0; j < numberOf_Y; j++) {
 		float Zj = 0.00f;
@@ -405,7 +422,7 @@ void forward() {
 		}
 		//insert H bias
 		Zj += output_bias[j];
-		y[j] = Zj;
+		y[j] = sigmoid_activation(Zj);
 	}
 }
 void back_propagate() {
@@ -417,7 +434,7 @@ void back_propagate() {
 		if (fabs(d[j] - y[j]) > _err_rete) {
 			_err_rete = fabs(d[j] - y[j]);
 		}
-		delta = (d[j] - y[j]);  // Derivata del layer output lineare è 1
+		delta = (d[j] - y[j]) * y[j] * (1.00f - y[j]);
 		// Aggiornamento dei pesi del layer di output e accumulo dell'errore per il layer nascosto
 		for (int k = 0; k < numberOf_H; k++) {
 			W2[k][j] += (_epsilon * delta * h[k]);
@@ -428,9 +445,7 @@ void back_propagate() {
 	}
 	// Calcolo del delta per il layer nascosto usando la derivata della ReLU
 	for (int k = 0; k < numberOf_H; k++) {
-		// Derivata della ReLU: 1 se il neurone è attivo (h[k] > 0), 0 altrimenti
-		float relu_deriv = (h[k] > 0.0f) ? 1.0f : 0.0f;
-		delta = err_H[k] * relu_deriv;
+		delta = err_H[k] * h[k] * (1.00f - h[k]);
 		// Aggiornamento dei pesi del layer nascosto
 		for (int i = 0; i < numberOf_X; i++) {
 			W1[i][k] += (_epsilon * delta * x[i]);

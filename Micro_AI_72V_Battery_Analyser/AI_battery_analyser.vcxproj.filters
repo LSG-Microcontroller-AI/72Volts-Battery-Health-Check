@@ -26,5 +26,8 @@
     <ClInclude Include="__vm\.AI_battery_analyser.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="__vm\.Micro_AI_72V_Battery_Analyser.vsarduino.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

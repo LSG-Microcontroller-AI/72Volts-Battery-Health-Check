@@ -20,7 +20,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AI_battery_analyser.ino" />
+    <ClCompile Include="Micro_AI_72V_Battery_Analyser.ino" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.AI_battery_analyser.vsarduino.h">

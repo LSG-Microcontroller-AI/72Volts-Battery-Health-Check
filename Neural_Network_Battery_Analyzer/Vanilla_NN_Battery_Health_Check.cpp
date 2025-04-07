@@ -17,7 +17,7 @@ using namespace std;
 //#include "imgui_impl_opengl3.h"
 //#include <GLFW/glfw3.h>
 #include <vector>
-#include "plot_renderer.h"
+//#include "plot_renderer.h"
 #ifdef __linux__
 #elif _WIN32
 #include <conio.h>
@@ -651,7 +651,7 @@ void setTime() {
 	// Usa localtime_r per Linux
 	struct tm timeinfo;
 	localtime_r(&now, &local_time);
-#elif __WIN32
+#elif _WIN32
 	localtime_s(&local_time, &now);
 #endif
 	std::strftime(_global_time, sizeof(_global_time), "%H:%M:%S", &local_time);

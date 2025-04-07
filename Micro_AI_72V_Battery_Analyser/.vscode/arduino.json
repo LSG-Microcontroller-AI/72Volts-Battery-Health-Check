@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "sketch": "AI_battery_analyser.ino",
+    "programmer": "usbtinyisp"
+}

@@ -1,42 +1,7 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-Lifepo4-Discharge-Model/x64/
-.vs/VSWorkspaceState.json
+CodeBlocks/cell_batteries_check_AI/obj/
+Micro_AI_72V_Battery_Analyser/__vm/
+Micro_AI_72V_Battery_Analyser/obj/
+Neural_Network_Battery_Analyzer/x64/
+Neural_Network_Battery_Analyzer/Debug/
+CodeBlocks/Vanilla-AI-Development/obj/
 .vs/
-Lifepo4-Discharge-Model/Debug/
-x64/
-SampleGenerator/Bin/
-AI_battery_analyser/obj/
-AI_battery_analyser/__vm/
-Book-Version/Debug/
-Book-Version/Release/

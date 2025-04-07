@@ -46,8 +46,8 @@ float _err_amm = 0.009f;
 float _epsilon = 0.001f;
 uint8_t const lines_per_training_sample = 8;
 uint16_t const training_samples = 337;
-const uint8_t numberOf_X = 2;
-const uint8_t numberOf_H = 25;
+const uint8_t numberOf_X = 3;
+const uint8_t numberOf_H = 20;
 const uint8_t numberOf_Y = 6;
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
@@ -326,8 +326,13 @@ void apprendi() {
 		varianza_err_rete = 0.00f;
 		_max_single_traning_output_error_average = 0.00f;
 		for (unsigned long p = 0; p < training_samples; p++) {
-			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
-			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
+			float normalized = amps_training[p] / 50.00f;
+			// Mappa il valore normalizzato in un angolo (0 a 2π)
+			float angle = normalized * 2 * M_PI;
+			// Assegna a x[0] il seno e a x[1] il coseno dell'angolo
+			x[0] = sin(angle);
+			x[1] = cos(angle);
+			x[2] = log(watts_hour_training[p] + 1.0f) / 10.0f;
 			for (int i = 0; i < numberOf_Y; i++) {
 				d[i] = battery_out_training[p][i] / 10.00f;
 			}
@@ -651,7 +656,7 @@ void setTime() {
 	// Usa localtime_r per Linux
 	struct tm timeinfo;
 	localtime_r(&now, &local_time);
-#elif __WIN32
+#elif _WIN32
 	localtime_s(&local_time, &now);
 #endif
 	std::strftime(_global_time, sizeof(_global_time), "%H:%M:%S", &local_time);

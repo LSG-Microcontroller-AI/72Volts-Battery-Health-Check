@@ -699,7 +699,6 @@ bool get_sample_for_test(int sampleIndex) {
 			return false;
 		}
 	}
-
 	// Legge la settima riga per aggiornare x[0]
 	if (!std::getline(file, line)) {
 		std::cerr << "Errore: file terminato prematuramente nella lettura di x[0] (riga "

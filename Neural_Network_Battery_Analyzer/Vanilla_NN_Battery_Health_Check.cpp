@@ -229,54 +229,40 @@ void init() {
 	//normal_distribution<double> dist(0.0, 1.0);
 	//-----------------------------------	bias initialization
 	for (int i = 0; i < numberOf_Y; i++){
-		output_bias[i] = 0.1f;
+		output_bias[i] = 0.10f;
 	}
 	for (int i = 0; i < numberOf_H; i++){
 		hidden_bias[i] = 0.1f;
 	}
-	//-----------------------------------	console input values + Hidden bias values
-	//cout << "input elements initialization:\n\n";
-	for (int i = 0; i < (numberOf_X); i++)
-	{
-		//x[i] = 0.00f;
+	for (int i = 0; i < (numberOf_X); i++){
 		cout << "x[" << i << "]" << "=" << x[i] << "\n";
 	}
-	for (int i = 0; i < numberOf_H; i++)
-	{
+	for (int i = 0; i < numberOf_H; i++){
 		cout << "hidden_bias[" << i << "]" << "=" << hidden_bias[i] << "-BIAS" << "\n";
 	}
 	//-----------------------------------	console hidden values + output bias values
-	for (int i = 0; i < (numberOf_H); i++)
-	{
-		//h[i] = 0.00f;
+	for (int i = 0; i < (numberOf_H); i++){
 		cout << "h[" << i << "]" << "=" << h[i] << "\n";
 	}
-	for (int i = 0; i < numberOf_Y; i++)
-	{
+	for (int i = 0; i < numberOf_Y; i++){
 		cout << "output_bias[" << i << "]" << "=" << output_bias[i] << "-BIAS" << "\n";
 	}
 	//cout << "output elements initialization:\n\n";
 	//-----------------------------------	console output values
-	for (int i = 0; i < numberOf_Y; i++)
-	{
-		//y[i] = 0.00f;
+	for (int i = 0; i < numberOf_Y; i++){
 		cout << "y[" << i << "]=" << y[i] << "\n";
 	}
 	//-----------------------------------	console W1 values
 	cout << "W1 elements initialization:\n\n";
-	for (int i = 0; i < numberOf_X; i++)
-	{
-		for (int k = 0; k < numberOf_H; k++)
-		{
+	for (int i = 0; i < numberOf_X; i++){
+		for (int k = 0; k < numberOf_H; k++){
 			W1[i][k] = get_random_number_from_xavier();
 			cout << "W1[" << i << "]" << "[" << k << "]" << "=" << W1[i][k] << "\n";
 		}
 	}
 	//-----------------------------------	console W2 values
-	for (int k = 0; k < numberOf_H; k++)
-	{
-		for (int j = 0; j < numberOf_Y; j++)
-		{
+	for (int k = 0; k < numberOf_H; k++){
+		for (int j = 0; j < numberOf_Y; j++){
 			W2[k][j] = get_random_number_from_xavier();
 			cout << "W2[" << k << "]" << "[" << j << "]" << "=" << W2[k][j] << "\n";
 		}
@@ -541,34 +527,25 @@ void read_samples_from_file_diagram_battery() {
 }
 void read_weights_from_file(){
 	std::ifstream in(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
-	if (in.good())
-	{
-		for (int i = 0; i < numberOf_X; i++)
-		{
-			for (int k = 0; k < numberOf_H; k++)
-			{
+	if (in.good()){
+		for (int i = 0; i < numberOf_X; i++){
+			for (int k = 0; k < numberOf_H; k++){
 				in.read((char*)&W1[i][k], sizeof(float));
 			}
 		}
-		for (int j = 0; j < numberOf_Y; j++)
-		{
-			for (int k = 0; k < numberOf_H; k++)
-			{
+		for (int j = 0; j < numberOf_Y; j++){
+			for (int k = 0; k < numberOf_H; k++){
 				in.read((char*)&W2[k][j], sizeof(float));
 			}
 		}
-		for (int k = 0; k < numberOf_H; k++)
-		{
+		for (int k = 0; k < numberOf_H; k++){
 			in.read((char*)&hidden_bias[k], sizeof(float));
 		}
-		for (int j = 0; j < numberOf_Y; j++)
-		{
+		for (int j = 0; j < numberOf_Y; j++){
 			in.read((char*)&output_bias[j], sizeof(float));
 		}
 		in.read((char*)&_err_epoca_min_value, sizeof(float));
 		in.read((char*)&_epsilon, sizeof(float));
-		//in.read((char*)&x[numberOf_X - 1], sizeof(float));
-		//in.read((char*)&h[numberOf_H - 1], sizeof(float));
 	}
 }
 void write_weights_on_file() {

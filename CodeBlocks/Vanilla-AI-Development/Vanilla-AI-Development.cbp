@@ -38,7 +38,7 @@
 		<Linker>
 			<Add directory="../../../../../vcpkg/installed/x64-windows/lib" />
 		</Linker>
-		<Unit filename="../../Lifepo4-Discharge-Model/Lifepo4-Discharge-Model.cpp" />
+		<Unit filename="../../Neural_Network_Battery_Analyzer/Vanilla_NN_Battery_Health_Check.cpp" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>

@@ -22,7 +22,7 @@ using namespace std;
 #elif _WIN32
 #include <conio.h>
 #include <windows.h>
-#else
+#pragma comment(lib, "user32.lib")
 #endif
 void init();
 void predict();

@@ -71,10 +71,10 @@ int main() {
 #ifdef __linux__
 
 #elif _WIN32
-	HWND consoleWindow = GetConsoleWindow();
-	// Sposta e massimizza la finestra
-	SetWindowPos(consoleWindow, nullptr, -1920, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
-	ShowWindow(consoleWindow, SW_MAXIMIZE);
+	//// Sposta e massimizza la finestra
+	//HWND consoleWindow = GetConsoleWindow();
+	//SetWindowPos(consoleWindow, nullptr, -1920, 0, 0, 0, SWP_NOSIZE | SWP_NOZORDER);
+	//ShowWindow(consoleWindow, SW_MAXIMIZE);
 #endif
 	int number_of_training_samples = count_training_samples(lines_per_training_sample);
 	if (number_of_training_samples != training_samples) {

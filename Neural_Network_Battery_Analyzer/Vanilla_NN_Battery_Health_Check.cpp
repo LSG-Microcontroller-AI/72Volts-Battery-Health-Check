@@ -318,7 +318,7 @@ void apprendi() {
 	read_samples_from_file_diagram_battery();
 	float average_err_rete = 0.00f;
 	float varianza_err_rete = 0.00f;
-	float deviazione_std = 0.00f;
+	float deviazione_std_err_rete = 0.00f;
 	float listOfErr_rete[training_samples] = { 0.00f };
 	do {
 		_err_epoca = 0.00f;
@@ -346,7 +346,7 @@ void apprendi() {
 			varianza_err_rete += pow(listOfErr_rete[p] - average_err_rete, 2);
 		}
 		varianza_err_rete /= training_samples;
-		deviazione_std = sqrt(varianza_err_rete);
+		deviazione_std_err_rete = sqrt(varianza_err_rete);
 		cout_counter++;
 		is_on_wtrite_file = false;
 		if (_err_epoca_min_value > _err_epoca) {
@@ -360,9 +360,9 @@ void apprendi() {
 				"\nlast time write on file = " << _global_time <<
 				"\nvarianza di errore di rete = " << varianza_err_rete <<
 				"\nmedia di errore di rete = " << average_err_rete <<
-				"\ndeviazione standard errore di rete = " << deviazione_std <<
+				"\ndeviazione standard errore di rete = " << deviazione_std_err_rete <<
 				"\nmax err_epoca is on sample line = " << max_error_file_index_line <<
-				"\npercentage dev.standard err_rete / media err_rete = " << (deviazione_std / average_err_rete) * 100 << "%" <<
+				"\npercentage dev.standard err_rete / media err_rete = " << (deviazione_std_err_rete / average_err_rete) * 100 << "%" <<
 				"\nepsilon=" << _epsilon << "\n";
 			cout_counter = 0;
 		}

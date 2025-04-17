@@ -11,13 +11,7 @@ using namespace std;
 #include <fstream>
 #include <cfloat>
 #include <random>
-//#include "imgui.h"
-//#include "implot.h"
-//#include "imgui_impl_glfw.h"
-//#include "imgui_impl_opengl3.h"
-//#include <GLFW/glfw3.h>
 #include <vector>
-//#include "plot_renderer.h"
 #ifdef __linux__
 #elif _WIN32
 #include <conio.h>
@@ -62,20 +56,9 @@ float watts_hour_training[training_samples]{};
 float battery_out_training[training_samples][numberOf_Y]{};
 char _global_time[9] = { 0 };
 float observed_data[6] = { 0.00f };
-//default_random_engine generator(time(0));
-//mt19937 gen;
 const string _relative_files_path = "72V-Battery-S11";
 const string _files_name = "72V_Battery.csv";
 //const string _files_name = "72V_Battery_Subset.csv";
-//GLFWwindow* window;
-//std::vector<double> ascissa1;
-//std::vector<double> ascissa2;
-//std::vector<double> ascissa3;
-//std::vector<double> ascissa4;
-//std::vector<double> ordinata1;
-//std::vector<double> ordinata2;
-//std::vector<double> ordinata3;
-//std::vector<double> ordinata4;
 float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
@@ -83,57 +66,10 @@ float _err_epoca_min_value = FLT_MAX;
 float relu(float x) {
 	return (x > 0) ? x : 0;
 }
-// Derivata della funzione ReLU
-//GLFWwindow* InitWindow() {
-//	if (!glfwInit()) {
-//		return nullptr;
-//	}
-//	// Abilita l'hint per una finestra massimizzata
-//	glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-//	// Crea la finestra con dimensioni standard
-//	GLFWwindow* window = glfwCreateWindow(1280, 720, "Grafici Seno e Coseno", NULL, NULL);
-//	if (!window) {
-//		glfwTerminate();
-//		return nullptr;
-//	}
-//	// Ora massimizziamo la finestra dopo la creazione
-//	glfwMaximizeWindow(window);
-//	glfwMakeContextCurrent(window);
-//	glfwSwapInterval(1);
-//	// Inizializzazione ImGui + ImPlot
-//	IMGUI_CHECKVERSION();
-//	ImGui::CreateContext();
-//	ImPlot::CreateContext();
-//	ImGui_ImplGlfw_InitForOpenGL(window, true);
-//	ImGui_ImplOpenGL3_Init("#version 130");
-//	return window;
-//}
-//void open_plots(PlotRenderer plot1, PlotRenderer plot2, PlotRenderer plot3, PlotRenderer plot4) {
-//	glfwPollEvents();
-//	ImGui_ImplOpenGL3_NewFrame();
-//	ImGui_ImplGlfw_NewFrame();
-//	ImGui::NewFrame();
-//	plot1.Begin();
-//	plot2.Begin();
-//	plot3.Begin();
-//	plot4.Begin();
-//	ImGui::Render();
-//	int display_w, display_h;
-//	glfwGetFramebufferSize(window, &display_w, &display_h);
-//	glViewport(0, 0, display_w, display_h);
-//	glClear(GL_COLOR_BUFFER_BIT);
-//	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-//	glfwSwapBuffers(window);
-//	GLenum err;
-//	while ((err = glGetError()) != GL_NO_ERROR) {
-//		std::cout << "Errore OpenGL: " << err << std::endl;
-//	}
-//}
 int main() {
-	//window = InitWindow();
+	
 #ifdef __linux__
-	// Sposta e massimizza la finestra
-	//system("xdotool search --onlyvisible --class 'gnome-terminal' windowmove 0 0 windowsize 1920 1080");
+
 #elif _WIN32
 	HWND consoleWindow = GetConsoleWindow();
 	// Sposta e massimizza la finestra
@@ -199,8 +135,6 @@ int main() {
 		}
 		else {
 			cout << "\nprocess blocked.\n";
-			/*read_weights_from_file();
-			apprendi();*/
 		}
 	}
 }
@@ -297,19 +231,6 @@ void predict() {
 			<< "\n y[5] = " << y[5];
 	}
 }
-//void print_graph(const char* window_name, float ordinata, const char description_ordinata[20], float ascissa, const char description_ascissa[20]) {
-//	ascissa1.push_back(ascissa);
-//	ordinata1.push_back(ordinata);
-//	/*char title_ordinata[30] = "epoca vs ";
-//	size_t available = sizeof(title_ordinata) - strlen(title_ordinata) - 1;
-//	errno_t err;
-//	err = strncat_s(title_ordinata, sizeof(title_ordinata), description_ordinata, available);
-//	if (err != 0) {
-//		cout <<"Errore nella concatenazione: codice %d\n" << err;
-//	}*/
-//	PlotRenderer plot1(window_name, ascissa1, ordinata1, description_ascissa, description_ordinata, "Andamento Errore_rete");
-//	open_plots(plot1, PlotRenderer(), PlotRenderer(), PlotRenderer());
-//}
 void apprendi() {
 	int max_error_file_index_line = 0;
 	int _epoca_index = 0;

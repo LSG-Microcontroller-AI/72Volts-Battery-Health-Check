@@ -447,28 +447,21 @@ void read_samples_from_file_diagram_battery() {
 }
 void read_weights_from_file(){
 	std::ifstream in(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
-	if (in.good())
-	{
-		for (int i = 0; i < numberOf_X; i++)
-		{
-			for (int k = 0; k < numberOf_H; k++)
-			{
+	if (in.good()){
+		for (int i = 0; i < numberOf_X; i++){
+			for (int k = 0; k < numberOf_H; k++){
 				in.read((char*)&W1[i][k], sizeof(float));
 			}
 		}
-		for (int j = 0; j < numberOf_Y; j++)
-		{
-			for (int k = 0; k < numberOf_H; k++)
-			{
+		for (int j = 0; j < numberOf_Y; j++){
+			for (int k = 0; k < numberOf_H; k++){
 				in.read((char*)&W2[k][j], sizeof(float));
 			}
 		}
-		for (int k = 0; k < numberOf_H; k++)
-		{
+		for (int k = 0; k < numberOf_H; k++){
 			in.read((char*)&hidden_bias[k], sizeof(float));
 		}
-		for (int j = 0; j < numberOf_Y; j++)
-		{
+		for (int j = 0; j < numberOf_Y; j++){
 			in.read((char*)&output_bias[j], sizeof(float));
 		}
 		in.read((char*)&_err_epoca_min_value, sizeof(float));

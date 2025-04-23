@@ -452,18 +452,21 @@ void read_weights_from_file() {
 			for (int i = 0; i < numberOf_X; i++) {
 				in.read((char*)&W1[i][k], sizeof(float));
 			}
+			in.read((char*)&hidden_bias[k], sizeof(float));
+			cout << hidden_bias[k] << "\n";
 		}
 		for (int j = 0; j < numberOf_Y; j++) {
 			for (int k = 0; k < numberOf_H; k++) {
 				in.read((char*)&W2[k][j], sizeof(float));
 			}
+			in.read((char*)&output_bias[j], sizeof(float));
 		}
-		for (int k = 0; k < numberOf_H; k++) {
+	/*	for (int k = 0; k < numberOf_H; k++) {
 			in.read((char*)&hidden_bias[k], sizeof(float));
 		}
 		for (int j = 0; j < numberOf_Y; j++) {
 			in.read((char*)&output_bias[j], sizeof(float));
-		}
+		}*/
 		in.read((char*)&_err_epoca_min_value, sizeof(float));
 		in.read((char*)&_epsilon, sizeof(float));
 		//in.read((char*)&x[numberOf_X - 1], sizeof(float));
@@ -477,18 +480,20 @@ void write_weights_on_file() {
 			for (int i = 0; i < numberOf_X; i++) {
 				fw.write((char*)&W1[i][k], sizeof(float));
 			}
+			fw.write((char*)&hidden_bias[k], sizeof(float));
 		}
 		for (int j = 0; j < numberOf_Y; j++) {
 			for (int k = 0; k < numberOf_H; k++) {
 				fw.write((char*)&W2[k][j], sizeof(float));
 			}
+			fw.write((char*)&output_bias[j], sizeof(float));
 		}
-		for (int k = 0; k < numberOf_H; k++) {
+		/*for (int k = 0; k < numberOf_H; k++) {
 			fw.write((char*)&hidden_bias[k], sizeof(float));
 		}
 		for (int j = 0; j < numberOf_Y; j++) {
 			fw.write((char*)&output_bias[j], sizeof(float));
-		}
+		}*/
 		fw.write((char*)&_err_epoca_min_value, sizeof(float));
 		fw.write((char*)&_epsilon, sizeof(float));
 		//fw.write((char*)&x[numberOf_X - 1], sizeof(float));

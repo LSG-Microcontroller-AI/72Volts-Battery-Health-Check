@@ -20,8 +20,8 @@ float normalized_observed_output[numberOf_Y] = { 0.00 };
 float normalized_predicted_output[numberOf_Y] = { 0.00 };
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
-float W1[numberOf_X][numberOf_H] = { 0.00 };
-float W2[numberOf_H][numberOf_Y] = { 0.00 };
+//float W1[numberOf_X][numberOf_H] = { 0.00 };
+//float W2[numberOf_H][numberOf_Y] = { 0.00 };
 float x[numberOf_X] = { 0.00 };
 float h[numberOf_H] = { 0.00 };
 float y[numberOf_Y] = { 0.00f };
@@ -32,12 +32,12 @@ const uint8_t dataSize = numFloats * sizeof(float);
 const uint8_t checksumSize = sizeof(float);
 const uint8_t footerSize = 1;
 const uint8_t packetSize = headerSize + dataSize + checksumSize + footerSize; // 39 bytes
-void read_weights_from_eeprom();
+//void read_weights_from_eeprom();
 // the setup function runs once when you press reset or power the board
 SoftwareSerial mySerial(10, 11); // Definizione: RX, TX
 void setup() {
 	Serial.begin(9600);
-	read_weights_from_eeprom();
+	//read_weights_from_eeprom();
 	observed_data[0] = 1.91f;
 	observed_data[1] = 1.84f;
 	observed_data[2] = 1.94f;
@@ -109,52 +109,65 @@ float relu(float x) {
 	return (x > 0) ? x : 0;
 }
 void forward() {
+	int addr = 0;
+	float Zk = 0.00f;
+	float Zj = 0.00f;
+	float data_from_eeprom = 0.00f;
 	for (int k = 0; k < (numberOf_H); k++) {
-		float Zk = 0.00f;
+		Zk = 0.00f;
 		for (int i = 0; i < numberOf_X; i++) {
-			Zk += (W1[i][k] * x[i]);
+			EEPROM.get(addr, data_from_eeprom);
+			Zk += (data_from_eeprom * x[i]);
+			addr += sizeof(float);
 		}
 		//insert X bias
-		Zk += hidden_bias[k];
+		EEPROM.get(addr, data_from_eeprom);
+		Serial.println(data_from_eeprom);
+		Zk += data_from_eeprom;
 		h[k] = relu(Zk);
+		addr += sizeof(float);
 	}
 	for (int j = 0; j < numberOf_Y; j++) {
-		float Zj = 0.00f;
+		Zj = 0.00f;
 		for (int k = 0; k < numberOf_H; k++) {
-			Zj += (W2[k][j] * h[k]);
+			EEPROM.get(addr, data_from_eeprom);
+			Zj += (data_from_eeprom * h[k]);
+			addr += sizeof(float);
 		}
+		EEPROM.get(addr, data_from_eeprom);
 		//insert H bias
-		Zj += output_bias[j];
+		Zj += data_from_eeprom;
 		y[j] = Zj;
-	}
-}
-void read_weights_from_eeprom() {
-	int addr = 0;  // partiamo dall'indirizzo 0 della EEPROM
-	// Legge la matrice W1: dimensione [numberOf_X][numberOf_H]
-		for (int k = 0; k < numberOf_H; k++) {
-			for (int i = 0; i < numberOf_X; i++) {
-			EEPROM.get(addr, W1[i][k]);
-			addr += sizeof(float);
-		}
-	}
-	// Legge la matrice W2: dimensione [numberOf_H][numberOf_Y]
-	for (int j = 0; j < numberOf_Y; j++) {
-		for (int k = 0; k < numberOf_H; k++) {
-			EEPROM.get(addr, W2[k][j]);
-			addr += sizeof(float);
-		}
-	}
-	// Legge il vettore dei bias per il layer nascosto
-	for (int k = 0; k < numberOf_H; k++) {
-		EEPROM.get(addr, hidden_bias[k]);
-		addr += sizeof(float);
-	}
-	// Legge il vettore dei bias per l'output
-	for (int j = 0; j < numberOf_Y; j++) {
-		EEPROM.get(addr, output_bias[j]);
 		addr += sizeof(float);
 	}
 }
+//void read_weights_from_eeprom() {
+//	int addr = 0;  // partiamo dall'indirizzo 0 della EEPROM
+//	// Legge la matrice W1: dimensione [numberOf_X][numberOf_H]
+//		for (int k = 0; k < numberOf_H; k++) {
+//			for (int i = 0; i < numberOf_X; i++) {
+//			EEPROM.get(addr, W1[i][k]);
+//			addr += sizeof(float);
+//		}
+//	}
+//	// Legge la matrice W2: dimensione [numberOf_H][numberOf_Y]
+//	for (int j = 0; j < numberOf_Y; j++) {
+//		for (int k = 0; k < numberOf_H; k++) {
+//			EEPROM.get(addr, W2[k][j]);
+//			addr += sizeof(float);
+//		}
+//	}
+//	// Legge il vettore dei bias per il layer nascosto
+//	for (int k = 0; k < numberOf_H; k++) {
+//		EEPROM.get(addr, hidden_bias[k]);
+//		addr += sizeof(float);
+//	}
+//	// Legge il vettore dei bias per l'output
+//	for (int j = 0; j < numberOf_Y; j++) {
+//		EEPROM.get(addr, output_bias[j]);
+//		addr += sizeof(float);
+//	}
+//}
 void normalizeArray(float* arr, float* normArr, int size) {
 	float minVal = arr[0];
 	float maxVal = arr[0];

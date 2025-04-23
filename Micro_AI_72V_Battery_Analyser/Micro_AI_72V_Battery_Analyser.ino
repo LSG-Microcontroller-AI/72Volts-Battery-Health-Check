@@ -122,7 +122,6 @@ void forward() {
 		}
 		//insert X bias
 		EEPROM.get(addr, data_from_eeprom);
-		Serial.println(data_from_eeprom);
 		Zk += data_from_eeprom;
 		h[k] = relu(Zk);
 		addr += sizeof(float);

@@ -67,7 +67,7 @@ float relu(float x) {
 	return (x > 0) ? x : 0;
 }
 int main() {
-	
+
 #ifdef __linux__
 
 #elif _WIN32
@@ -145,10 +145,10 @@ void init() {
 	double init_scale_hidden = sqrt(2.0 / numberOf_H);
 	normal_distribution<double> dist(0.0, 1.0);
 	//-----------------------------------	bias initialization
-	for (int i = 0; i < numberOf_Y; i++){
+	for (int i = 0; i < numberOf_Y; i++) {
 		output_bias[i] = 0.1f;
 	}
-	for (int i = 0; i < numberOf_H; i++){
+	for (int i = 0; i < numberOf_H; i++) {
 		hidden_bias[i] = 0.1f;
 	}
 	//-----------------------------------	console input values + Hidden bias values
@@ -445,23 +445,23 @@ void read_samples_from_file_diagram_battery() {
 	}
 	file.close();
 }
-void read_weights_from_file(){
+void read_weights_from_file() {
 	std::ifstream in(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
-	if (in.good()){
-		for (int i = 0; i < numberOf_X; i++){
-			for (int k = 0; k < numberOf_H; k++){
+	if (in.good()) {
+		for (int k = 0; k < numberOf_H; k++) {
+			for (int i = 0; i < numberOf_X; i++) {
 				in.read((char*)&W1[i][k], sizeof(float));
 			}
 		}
-		for (int j = 0; j < numberOf_Y; j++){
-			for (int k = 0; k < numberOf_H; k++){
+		for (int j = 0; j < numberOf_Y; j++) {
+			for (int k = 0; k < numberOf_H; k++) {
 				in.read((char*)&W2[k][j], sizeof(float));
 			}
 		}
-		for (int k = 0; k < numberOf_H; k++){
+		for (int k = 0; k < numberOf_H; k++) {
 			in.read((char*)&hidden_bias[k], sizeof(float));
 		}
-		for (int j = 0; j < numberOf_Y; j++){
+		for (int j = 0; j < numberOf_Y; j++) {
 			in.read((char*)&output_bias[j], sizeof(float));
 		}
 		in.read((char*)&_err_epoca_min_value, sizeof(float));
@@ -473,8 +473,8 @@ void read_weights_from_file(){
 void write_weights_on_file() {
 	std::ofstream fw(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
 	if (fw.good()) {
-		for (int i = 0; i < numberOf_X; i++) {
-			for (int k = 0; k < numberOf_H; k++) {
+		for (int k = 0; k < numberOf_H; k++) {
+			for (int i = 0; i < numberOf_X; i++) {
 				fw.write((char*)&W1[i][k], sizeof(float));
 			}
 		}

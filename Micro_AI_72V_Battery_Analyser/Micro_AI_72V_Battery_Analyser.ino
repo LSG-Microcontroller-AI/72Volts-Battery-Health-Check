@@ -131,8 +131,8 @@ void forward() {
 void read_weights_from_eeprom() {
 	int addr = 0;  // partiamo dall'indirizzo 0 della EEPROM
 	// Legge la matrice W1: dimensione [numberOf_X][numberOf_H]
-	for (int i = 0; i < numberOf_X; i++) {
 		for (int k = 0; k < numberOf_H; k++) {
+			for (int i = 0; i < numberOf_X; i++) {
 			EEPROM.get(addr, W1[i][k]);
 			addr += sizeof(float);
 		}

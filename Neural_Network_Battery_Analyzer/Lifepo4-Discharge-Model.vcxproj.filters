@@ -7,9 +7,6 @@
     <Filter Include="battery-S11-72V">
       <UniqueIdentifier>{ead86261-092b-409c-adce-8f47b61cfa9f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="battery-S12-72V">
-      <UniqueIdentifier>{d6412411-fd8a-4f88-97de-8a58c8fa40dc}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="72V-Battery-S11\72V_Battery.CSV">
@@ -17,12 +14,6 @@
     </None>
     <None Include="72V-Battery-S11\model.hex">
       <Filter>battery-S11-72V</Filter>
-    </None>
-    <None Include="72V-Battery-S12\72V_Battery.CSV">
-      <Filter>battery-S12-72V</Filter>
-    </None>
-    <None Include="72V-Battery-S12\model.bin">
-      <Filter>battery-S12-72V</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -23,8 +23,6 @@
   <ItemGroup>
     <None Include="72V-Battery-S11\72V_Battery.CSV" />
     <None Include="72V-Battery-S11\model.hex" />
-    <None Include="72V-Battery-S12\72V_Battery.CSV" />
-    <None Include="72V-Battery-S12\model.bin" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="plot_renderer.h" />

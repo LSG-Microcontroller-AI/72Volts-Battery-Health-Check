@@ -80,19 +80,19 @@ float err_min_rete = FLT_MAX;
 bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
 float _err_epoca_min_value = FLT_MAX;
-double _lower_bound_xavier;
-double _upper_bound_xavier;
+float _lower_bound_xavier;
+float _upper_bound_xavier;
 default_random_engine generator(time(0));
-double xavier_init(double n_x, double n_y) {
+float xavier_init(float n_x, float n_y) {
 	return sqrt(6.0) / sqrt(n_x + n_y);
 }
 float sigmoid_activation(float Z) {
 	//return 1.00f / (1.00f + pow(M_E, (Z * -1)));
 	return 1.00f / (1.00f + exp((Z * -1)));
 }
-double get_random_number_from_xavier() {
-	uniform_real_distribution<double> distribution(_lower_bound_xavier, _upper_bound_xavier);
-	double random_value = distribution(generator);
+float get_random_number_from_xavier() {
+	uniform_real_distribution<float> distribution(_lower_bound_xavier, _upper_bound_xavier);
+	float random_value = distribution(generator);
 	return random_value;
 }
 
@@ -218,7 +218,7 @@ int main() {
 	}
 }
 void init() {
-	double param = xavier_init(numberOf_X, numberOf_Y);
+	float param = xavier_init(numberOf_X, numberOf_Y);
 	cout << "xavier glorot param : " << param << "\n\n";
 	_lower_bound_xavier = -param;
 	_upper_bound_xavier = param;

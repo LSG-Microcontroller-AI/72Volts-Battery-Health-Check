@@ -12,6 +12,9 @@
     <None Include="72V-Battery-S11\72V_Battery.CSV">
       <Filter>battery-S11-72V</Filter>
     </None>
+    <None Include="72V-Battery-S11\model.hex">
+      <Filter>battery-S11-72V</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="plot_renderer.h" />

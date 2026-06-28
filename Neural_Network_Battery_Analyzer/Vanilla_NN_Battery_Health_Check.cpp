@@ -341,8 +341,8 @@ void back_propagate() {
 		delta = (d[j] - y[j]);  // Derivata del layer output lineare è 1
 		// Aggiornamento dei pesi del layer di output e accumulo dell'errore per il layer nascosto
 		for (int k = 0; k < numberOf_H; k++) {
-			W2[k][j] += (_epsilon * delta * h[k]);
 			err_H[k] += delta * W2[k][j];
+			W2[k][j] += (_epsilon * delta * h[k]);
 		}
 		// Aggiornamento del bias per il layer di output
 		output_bias[j] += _epsilon * delta;

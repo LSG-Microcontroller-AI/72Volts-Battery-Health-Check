@@ -8,3 +8,5 @@ CodeBlocks/Vanilla-AI-Development/obj/
 Neural_Network_Battery_Analyzer/Release/
 x64/Debug/Neural_Network_Battery_Analyzer.exe
 x64/
+tmp/
+Neural_Network_Battery_Analyzer/Lifepo4-Discharge-Model.vcxproj.user

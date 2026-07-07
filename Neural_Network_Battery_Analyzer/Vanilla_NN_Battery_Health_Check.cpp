@@ -26,20 +26,21 @@ void back_propagate();
 void read_weights_from_file();
 void write_weights_on_file();
 void read_samples_from_file_diagram_battery();
-float overallMean(const float* arr1, const float* arr2, int size);
+//float overallMean(const float* arr1, const float* arr2, int size);
 void normalizeArray(float* array, float* normalized_array, int size);
 float mean_square_error(const float* arr1, const float* arr2, int size);
 float calculateVariance(const float* data, int size);
-float calculateErrorPercentage(float mse, float overallMean);
+float mean_value(const float* data, int size);
+float calculateErrorPercentage(float mse, float reference_mean);
 int count_training_samples(int linesPerSample);
 bool get_sample_for_test(int sampleIndex);
 void setTime();
 float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.009f;
-float _epsilon = 0.001f;
+float _epsilon = 0.0001f;
 uint8_t const lines_per_training_sample = 8;
-uint16_t const training_samples = 332;
+uint16_t const training_samples = 323;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
@@ -141,7 +142,7 @@ int main() {
 void init() {
 	random_device rd;
 	mt19937 gen = mt19937(rd());
-	double init_scale_input = sqrt(2.0 / numberOf_Y);
+	double init_scale_input = sqrt(2.0 / numberOf_X);
 	double init_scale_hidden = sqrt(2.0 / numberOf_H);
 	normal_distribution<double> dist(0.0, 1.0);
 	//-----------------------------------	bias initialization
@@ -201,7 +202,7 @@ void init() {
 }
 void predict() {
 	float normalized_observed_output[numberOf_Y] = { 0.00 };
-	float normalized_predicted_output[numberOf_Y] = { 0.00 };
+	//float normalized_predicted_output[numberOf_Y] = { 0.00 };
 	int sampleIndex = 0;
 	while (true) {
 		std::cout << "\nInsert file sample line (Ctrl+C to esc):\n";
@@ -214,15 +215,16 @@ void predict() {
 		for (int i = 0; i < 6; i++) {
 			y[i] = y[i] * 10.00f;
 		}
-		normalizeArray(y, normalized_predicted_output, numberOf_Y);
+		//normalizeArray(y, normalized_predicted_output, numberOf_Y);
 		float mse = mean_square_error(observed_data, y, numberOf_Y);
-		float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output, numberOf_Y);
-		float percentage = calculateErrorPercentage(mse, overall_mean);
+		//float overall_mean = overallMean(normalized_observed_output, normalized_predicted_output, numberOf_Y);
+		float observed_mean = mean_value(observed_data, numberOf_Y);
+		float percentage = calculateErrorPercentage(mse, observed_mean);
 		float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
 		std::cout << "percentage = :" << percentage << "%\n";
 		std::cout << "varianza = :" << varianza << "\n";
 		// Stampa dei risultati
-		std::cout << "\n x[0] = " << exp(x[0] * 10.00f) << " x[1] = " << exp(x[1] * 10.00f) << "\n"
+		std::cout << "\n x[0] = " << (exp(x[0] * 10.00f) - 1.00f) << " x[1] = " << (exp(x[1] * 10.00f) - 1.00f) << "\n"
 			<< "\n y[0] = " << y[0]
 			<< "\n y[1] = " << y[1]
 			<< "\n y[2] = " << y[2]
@@ -531,6 +533,7 @@ float mean_square_error(const float* arr1, const float* arr2, int size) {
 	// MSE = (1 / N) * Σ (diff^2)
 	return sum / size;
 }
+/*
 float overallMean(const float* arr1, const float* arr2, int size) {
 	float sum = 0.0f;
 	// Sommiamo tutti gli elementi di entrambi gli array
@@ -540,11 +543,19 @@ float overallMean(const float* arr1, const float* arr2, int size) {
 	// La media complessiva è la somma divisa per il numero totale di elementi (2*size)
 	return sum / (2 * size);
 }
-float calculateErrorPercentage(float mse, float overallMean) {
+*/
+float mean_value(const float* data, int size) {
+	float sum = 0.0f;
+	for (int i = 0; i < size; ++i) {
+		sum += data[i];
+	}
+	return sum / size;
+}
+float calculateErrorPercentage(float mse, float reference_mean) {
 	// Calcola il Root Mean Squared Error (RMSE)
 	float rms = sqrt(mse);
-	// Calcola la percentuale: (RMSE / media complessiva) * 100
-	float errorPercentage = (rms / overallMean) * 100.00f;
+	// Calcola la percentuale: (RMSE / media reale osservata) * 100
+	float errorPercentage = (rms / reference_mean) * 100.00f;
 	return errorPercentage;
 }
 float calculateVariance(const float* data, int size) {

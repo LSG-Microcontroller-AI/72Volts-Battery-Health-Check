@@ -26,21 +26,24 @@ void back_propagate();
 void read_weights_from_file();
 void write_weights_on_file();
 void read_samples_from_file_diagram_battery();
+void print_hidden_activation_status(const uint16_t* hidden_activation_count);
 //float overallMean(const float* arr1, const float* arr2, int size);
 void normalizeArray(float* array, float* normalized_array, int size);
 float mean_square_error(const float* arr1, const float* arr2, int size);
 float calculateVariance(const float* data, int size);
 float mean_value(const float* data, int size);
 float calculateErrorPercentage(float mse, float reference_mean);
+float calculate_cosine_shape_similarity_percentage(const float* arr1, const float* arr2, int size);
 int count_training_samples(int linesPerSample);
 bool get_sample_for_test(int sampleIndex);
 void setTime();
 float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.009f;
-float _epsilon = 0.0001f;
+float _epsilon = 0.0005f;
 uint8_t const lines_per_training_sample = 8;
 uint16_t const training_samples = 323;
+const int training_report_epoch_interval = 10000;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
@@ -221,8 +224,10 @@ void predict() {
 		float observed_mean = mean_value(observed_data, numberOf_Y);
 		float percentage = calculateErrorPercentage(mse, observed_mean);
 		float varianza = calculateVariance(normalized_observed_output, numberOf_Y);
+		float cosine_percentage = calculate_cosine_shape_similarity_percentage(observed_data, y, numberOf_Y);
 		std::cout << "percentage = :" << percentage << "%\n";
 		std::cout << "varianza = :" << varianza << "\n";
+		std::cout << "cosine similarity percentage = :" << cosine_percentage << "%\n";
 		// Stampa dei risultati
 		std::cout << "\n x[0] = " << (exp(x[0] * 10.00f) - 1.00f) << " x[1] = " << (exp(x[1] * 10.00f) - 1.00f) << "\n"
 			<< "\n y[0] = " << y[0]
@@ -243,11 +248,18 @@ void apprendi() {
 	float varianza_err_rete = 0.00f;
 	float deviazione_std_err_rete = 0.00f;
 	float listOfErr_rete[training_samples] = { 0.00f };
+	uint16_t hidden_activation_count[numberOf_H] = { 0 };
 	do {
 		_err_epoca = 0.00f;
 		average_err_rete = 0.00f;
 		varianza_err_rete = 0.00f;
 		_max_single_traning_output_error_average = 0.00f;
+		bool should_track_hidden_activation = (cout_counter == training_report_epoch_interval - 1);
+		if (should_track_hidden_activation) {
+			for (int k = 0; k < numberOf_H; k++) {
+				hidden_activation_count[k] = 0;
+			}
+		}
 		for (unsigned long p = 0; p < training_samples; p++) {
 			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
@@ -255,6 +267,13 @@ void apprendi() {
 				d[i] = battery_out_training[p][i] / 10.00f;
 			}
 			forward();
+			if (should_track_hidden_activation) {
+				for (int k = 0; k < numberOf_H; k++) {
+					if (h[k] > 0.0f) {
+						hidden_activation_count[k]++;
+					}
+				}
+			}
 			back_propagate();
 			if (_err_rete > _err_epoca) {
 				_err_epoca = _err_rete;
@@ -276,7 +295,7 @@ void apprendi() {
 			is_on_wtrite_file = true;
 			_err_epoca_min_value = _err_epoca;
 		}
-		if (cout_counter == 10000) {
+		if (cout_counter == training_report_epoch_interval) {
 			std::cout << "\nepoca:" << _epoca_index <<
 				"\nerr_epoca=" << _err_epoca <<
 				"\nmin. err_epoca=" << _err_epoca_min_value <<
@@ -287,6 +306,7 @@ void apprendi() {
 				"\nmax err_epoca is on sample line = " << max_error_file_index_line <<
 				"\npercentage dev.standard err_rete / media err_rete = " << (deviazione_std_err_rete / average_err_rete) * 100 << "%" <<
 				"\nepsilon=" << _epsilon << "\n";
+			print_hidden_activation_status(hidden_activation_count);
 			cout_counter = 0;
 		}
 		if (is_on_wtrite_file) {
@@ -360,6 +380,16 @@ void back_propagate() {
 		}
 		// Aggiornamento del bias per il layer nascosto
 		hidden_bias[k] += _epsilon * delta;
+	}
+}
+void print_hidden_activation_status(const uint16_t* hidden_activation_count) {
+	std::cout << "\nhidden activation count per epoch:\n";
+	for (int k = 0; k < numberOf_H; k++) {
+		std::cout << "h[" << k << "]=" << hidden_activation_count[k] << "/" << training_samples;
+		if (hidden_activation_count[k] == 0) {
+			std::cout << " DEAD";
+		}
+		std::cout << "\n";
 	}
 }
 void read_samples_from_file_diagram_battery() {
@@ -557,6 +587,50 @@ float calculateErrorPercentage(float mse, float reference_mean) {
 	// Calcola la percentuale: (RMSE / media reale osservata) * 100
 	float errorPercentage = (rms / reference_mean) * 100.00f;
 	return errorPercentage;
+}
+float calculate_cosine_shape_similarity_percentage(const float* arr1, const float* arr2, int size) {
+	if (size < 2) {
+		return 0.00f;
+	}
+	float dot_product = 0.00f;
+	float arr1_square_sum = 0.00f;
+	float arr2_square_sum = 0.00f;
+	float slope_similarity_sum = 0.00f;
+	for (int i = 1; i < size; i++) {
+		float arr1_slope = arr1[i] - arr1[i - 1];
+		float arr2_slope = arr2[i] - arr2[i - 1];
+		if ((arr1_slope > 0.00f && arr2_slope < 0.00f) || (arr1_slope < 0.00f && arr2_slope > 0.00f)) {
+			return 0.00f;
+		}
+		dot_product += arr1_slope * arr2_slope;
+		arr1_square_sum += arr1_slope * arr1_slope;
+		arr2_square_sum += arr2_slope * arr2_slope;
+		if (arr1_slope == 0.00f && arr2_slope == 0.00f) {
+			slope_similarity_sum += 1.00f;
+		}
+		else if ((arr1_slope > 0.00f && arr2_slope > 0.00f) || (arr1_slope < 0.00f && arr2_slope < 0.00f)) {
+			float arr1_abs_slope = fabs(arr1_slope);
+			float arr2_abs_slope = fabs(arr2_slope);
+			float max_slope = (arr1_abs_slope > arr2_abs_slope) ? arr1_abs_slope : arr2_abs_slope;
+			float min_slope = (arr1_abs_slope < arr2_abs_slope) ? arr1_abs_slope : arr2_abs_slope;
+			slope_similarity_sum += min_slope / max_slope;
+		}
+	}
+	if (arr1_square_sum == 0.00f && arr2_square_sum == 0.00f) {
+		return 100.00f;
+	}
+	if (arr1_square_sum == 0.00f || arr2_square_sum == 0.00f) {
+		return 0.00f;
+	}
+	float cosine_similarity = dot_product / sqrt(arr1_square_sum * arr2_square_sum);
+	if (cosine_similarity <= 0.00f) {
+		return 0.00f;
+	}
+	if (cosine_similarity > 1.00f) {
+		cosine_similarity = 1.00f;
+	}
+	float slope_similarity = slope_similarity_sum / (size - 1);
+	return cosine_similarity * slope_similarity * 100.00f;
 }
 float calculateVariance(const float* data, int size) {
 	// Calcolo della media

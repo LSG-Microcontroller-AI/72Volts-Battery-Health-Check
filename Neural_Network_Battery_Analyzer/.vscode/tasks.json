@@ -2,27 +2,136 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "cppbuild",
-			"label": "C/C++: cl.exe build active file",
-			"command": "cl.exe",
+			"label": "Create build directories",
+			"type": "process",
+			"command": "mkdir",
 			"args": [
-				"/Zi",
-				"/EHsc",
-				"/nologo",
-				"/Fe${fileDirname}\\${fileBasenameNoExtension}.exe",
-				"${file}"
+				"-p",
+				"${workspaceFolder}/build/Debug",
+				"${workspaceFolder}/build/Release"
 			],
-			"options": {
-				"cwd": "${fileDirname}"
+			"windows": {
+				"command": "cmd.exe",
+				"args": [
+					"/d",
+					"/c",
+					"if not exist \"${workspaceFolder}\\build\\Debug\" mkdir \"${workspaceFolder}\\build\\Debug\" & if not exist \"${workspaceFolder}\\build\\Release\" mkdir \"${workspaceFolder}\\build\\Release\""
+				]
 			},
-			"problemMatcher": [
-				"$msCompile"
+			"problemMatcher": []
+		},
+		{
+			"label": "Build C++: Debug",
+			"type": "process",
+			"command": "g++",
+			"args": [
+				"-std=c++14",
+				"-g",
+				"-O0",
+				"-Wall",
+				"-Wextra",
+				"${workspaceFolder}/Vanilla_NN_Battery_Health_Check.cpp",
+				"-o",
+				"${workspaceFolder}/build/Debug/outDebug"
 			],
+			"windows": {
+				"command": "cl.exe",
+				"args": [
+					"/std:c++14",
+					"/Zi",
+					"/Od",
+					"/EHsc",
+					"/W3",
+					"/nologo",
+					"/Fe:${workspaceFolder}\\build\\Debug\\outDebug.exe",
+					"/Fd:${workspaceFolder}\\build\\Debug\\outDebug.pdb",
+					"${workspaceFolder}\\Vanilla_NN_Battery_Health_Check.cpp"
+				],
+				"problemMatcher": ["$msCompile"]
+			},
+			"linux": {
+				"problemMatcher": ["$gcc"]
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"dependsOn": "Create build directories",
 			"group": {
 				"kind": "build",
 				"isDefault": true
+			}
+		},
+		{
+			"label": "Build C++: Release",
+			"type": "process",
+			"command": "g++",
+			"args": [
+				"-std=c++14",
+				"-O3",
+				"-DNDEBUG",
+				"-Wall",
+				"-Wextra",
+				"${workspaceFolder}/Vanilla_NN_Battery_Health_Check.cpp",
+				"-o",
+				"${workspaceFolder}/build/Release/outRelease"
+			],
+			"windows": {
+				"command": "cl.exe",
+				"args": [
+					"/std:c++14",
+					"/O2",
+					"/DNDEBUG",
+					"/EHsc",
+					"/W3",
+					"/nologo",
+					"/Fe:${workspaceFolder}\\build\\Release\\outRelease.exe",
+					"${workspaceFolder}\\Vanilla_NN_Battery_Health_Check.cpp"
+				],
+				"problemMatcher": ["$msCompile"]
 			},
-			"detail": "compiler: cl.exe"
+			"linux": {
+				"problemMatcher": ["$gcc"]
+			},
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"dependsOn": "Create build directories"
+		},
+		{
+			"label": "Run C++: Debug (interactive)",
+			"type": "process",
+			"command": "${workspaceFolder}/build/Debug/outDebug",
+			"args": [],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"dependsOn": "Build C++: Debug",
+			"dependsOrder": "sequence",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"focus": true,
+				"panel": "dedicated",
+				"clear": true
+			}
+		},
+		{
+			"label": "Run C++: Debug (external console)",
+			"type": "process",
+			"command": "xterm",
+			"args": [
+				"-hold",
+				"-title",
+				"Neural Network Battery Analyzer",
+				"-e",
+				"${workspaceFolder}/build/Debug/outDebug"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"dependsOn": "Build C++: Debug",
+			"dependsOrder": "sequence",
+			"problemMatcher": []
 		}
 	]
 }

@@ -11,6 +11,7 @@ using namespace std;
 #include <fstream>
 #include <cfloat>
 #include <random>
+#include <thread>
 #include <vector>
 #ifdef __linux__
 #elif _WIN32
@@ -23,8 +24,10 @@ void predict();
 void forward();
 void apprendi();
 void back_propagate();
+float calculate_max_output_error();
+void evaluate_model(float* error_list, float& max_error, float& average_error, int& max_error_file_index_line, uint16_t* hidden_activation_count);
 void read_weights_from_file();
-void write_weights_on_file();
+bool write_weights_on_file();
 void read_samples_from_file_diagram_battery();
 void print_hidden_activation_status(const uint16_t* hidden_activation_count);
 //float overallMean(const float* arr1, const float* arr2, int size);
@@ -40,7 +43,7 @@ void setTime();
 float _err_epoca;
 float _err_rete = 0.00f;
 float _err_amm = 0.009f;
-float _epsilon = 0.0005f;
+float _epsilon = 0.05f;
 uint8_t const lines_per_training_sample = 8;
 uint16_t const training_samples = 323;
 const int training_report_epoch_interval = 10000;
@@ -64,7 +67,6 @@ const string _relative_files_path = "72V-Battery-S11";
 const string _files_name = "72V_Battery.csv";
 //const string _files_name = "72V_Battery_Subset.csv";
 float err_min_rete = FLT_MAX;
-bool is_on_wtrite_file = false;
 float _max_single_traning_output_error_average = 0.00f;
 float _err_epoca_min_value = FLT_MAX;
 float relu(float x) {
@@ -260,6 +262,7 @@ void apprendi() {
 				hidden_activation_count[k] = 0;
 			}
 		}
+		// Training pass: each sample updates weights and biases.
 		for (unsigned long p = 0; p < training_samples; p++) {
 			x[0] = log(amps_training[p] + 1.0f) / 10.0f;
 			x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
@@ -267,33 +270,26 @@ void apprendi() {
 				d[i] = battery_out_training[p][i] / 10.00f;
 			}
 			forward();
-			if (should_track_hidden_activation) {
-				for (int k = 0; k < numberOf_H; k++) {
-					if (h[k] > 0.0f) {
-						hidden_activation_count[k]++;
-					}
-				}
-			}
 			back_propagate();
-			if (_err_rete > _err_epoca) {
-				_err_epoca = _err_rete;
-				max_error_file_index_line = ((p) * 8) + 1;
-			}
-			listOfErr_rete[p] = _err_rete;
-			average_err_rete += _err_rete;
 		}
+		// Evaluation pass: all statistics refer to the same final weights.
+		evaluate_model(listOfErr_rete, _err_epoca, average_err_rete, max_error_file_index_line, should_track_hidden_activation ? hidden_activation_count : nullptr);
 		_epoca_index++;
-		average_err_rete /= training_samples;
 		for (unsigned long p = 0; p < training_samples; p++) {
 			varianza_err_rete += pow(listOfErr_rete[p] - average_err_rete, 2);
 		}
 		varianza_err_rete /= training_samples;
 		deviazione_std_err_rete = sqrt(varianza_err_rete);
 		cout_counter++;
-		is_on_wtrite_file = false;
 		if (_err_epoca_min_value > _err_epoca) {
-			is_on_wtrite_file = true;
+			float previous_min_error = _err_epoca_min_value;
 			_err_epoca_min_value = _err_epoca;
+			if (!write_weights_on_file()) {
+				_err_epoca_min_value = previous_min_error;
+			}
+			else {
+				setTime();
+			}
 		}
 		if (cout_counter == training_report_epoch_interval) {
 			std::cout << "\nepoca:" << _epoca_index <<
@@ -304,14 +300,10 @@ void apprendi() {
 				"\nmedia di errore di rete = " << average_err_rete <<
 				"\ndeviazione standard errore di rete = " << deviazione_std_err_rete <<
 				"\nmax err_epoca is on sample line = " << max_error_file_index_line <<
-				"\npercentage dev.standard err_rete / media err_rete = " << (deviazione_std_err_rete / average_err_rete) * 100 << "%" <<
+				"\npercentage dev.standard err_rete / media err_rete = " << (average_err_rete > 0.0f ? (deviazione_std_err_rete / average_err_rete) * 100.0f : 0.0f) << "%" <<
 				"\nepsilon=" << _epsilon << "\n";
 			print_hidden_activation_status(hidden_activation_count);
 			cout_counter = 0;
-		}
-		if (is_on_wtrite_file) {
-			setTime();
-			write_weights_on_file();
 		}
 	} while (_err_epoca > _err_amm);
 	setTime();
@@ -354,12 +346,8 @@ void forward() {
 void back_propagate() {
 	float err_H[numberOf_H] = { 0.00f };
 	float delta = 0.00f;
-	_err_rete = 0.00f;
 	// Calcolo del delta per il layer di output (attivazione lineare -> derivata = 1)
 	for (int j = 0; j < numberOf_Y; j++) {
-		if (fabs(d[j] - y[j]) > _err_rete) {
-			_err_rete = fabs(d[j] - y[j]);
-		}
 		delta = (d[j] - y[j]);  // Derivata del layer output lineare è 1
 		// Aggiornamento dei pesi del layer di output e accumulo dell'errore per il layer nascosto
 		for (int k = 0; k < numberOf_H; k++) {
@@ -381,6 +369,44 @@ void back_propagate() {
 		// Aggiornamento del bias per il layer nascosto
 		hidden_bias[k] += _epsilon * delta;
 	}
+}
+float calculate_max_output_error() {
+	float max_output_error = 0.00f;
+	for (int j = 0; j < numberOf_Y; j++) {
+		float output_error = fabs(d[j] - y[j]);
+		if (output_error > max_output_error) {
+			max_output_error = output_error;
+		}
+	}
+	return max_output_error;
+}
+void evaluate_model(float* error_list, float& max_error, float& average_error, int& max_error_file_index_line, uint16_t* hidden_activation_count) {
+	max_error = 0.00f;
+	average_error = 0.00f;
+	max_error_file_index_line = 1;
+	for (unsigned long p = 0; p < training_samples; p++) {
+		x[0] = log(amps_training[p] + 1.0f) / 10.0f;
+		x[1] = log(watts_hour_training[p] + 1.0f) / 10.0f;
+		for (int i = 0; i < numberOf_Y; i++) {
+			d[i] = battery_out_training[p][i] / 10.00f;
+		}
+		forward();
+		if (hidden_activation_count != nullptr) {
+			for (int k = 0; k < numberOf_H; k++) {
+				if (h[k] > 0.0f) {
+					hidden_activation_count[k]++;
+				}
+			}
+		}
+		_err_rete = calculate_max_output_error();
+		if (_err_rete > max_error) {
+			max_error = _err_rete;
+			max_error_file_index_line = ((p) * lines_per_training_sample) + 1;
+		}
+		error_list[p] = _err_rete;
+		average_error += _err_rete;
+	}
+	average_error /= training_samples;
 }
 void print_hidden_activation_status(const uint16_t* hidden_activation_count) {
 	std::cout << "\nhidden activation count per epoch:\n";
@@ -505,9 +531,15 @@ void read_weights_from_file() {
 		//in.read((char*)&h[numberOf_H - 1], sizeof(float));
 	}
 }
-void write_weights_on_file() {
-	std::ofstream fw(_relative_files_path + "/" + "model.hex", std::ios_base::binary);
-	if (fw.good()) {
+bool write_weights_on_file() {
+	const std::string model_path = _relative_files_path + "/" + "model.hex";
+	const uint8_t max_write_attempts = 10;
+	for (uint8_t attempt = 0; attempt < max_write_attempts; attempt++) {
+		std::ofstream fw(model_path, std::ios_base::binary);
+		if (!fw.good()) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			continue;
+		}
 		for (int k = 0; k < numberOf_H; k++) {
 			for (int i = 0; i < numberOf_X; i++) {
 				fw.write((char*)&W1[i][k], sizeof(float));
@@ -531,10 +563,13 @@ void write_weights_on_file() {
 		//fw.write((char*)&x[numberOf_X - 1], sizeof(float));
 		//fw.write((char*)&h[numberOf_H - 1], sizeof(float));
 		fw.close();
-		//cout << "\nFile closed... \n\n";
+		if (fw.good()) {
+			return true;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
-	else
-		cout << "Problem with opening file";
+	std::cerr << "\nUnable to write model file: " << model_path << "\n";
+	return false;
 }
 void normalizeArray(float* arr, float* normArr, int size) {
 	float minVal = arr[0];
@@ -786,9 +821,6 @@ int count_training_samples(int linesPerSample) {
 	}
 	return totalLines / linesPerSample;
 }
-
-
-
 
 
 

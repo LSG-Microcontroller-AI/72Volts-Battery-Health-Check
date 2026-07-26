@@ -1,6 +1,7 @@
 using namespace std;
 #define _USE_MATH_DEFINES
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <stdlib.h>
 #include <stdint.h>
@@ -38,6 +39,7 @@ float mean_value(const float* data, int size);
 float calculateErrorPercentage(float mse, float reference_mean);
 float calculate_cosine_shape_similarity_percentage(const float* arr1, const float* arr2, int size);
 int count_training_samples(int linesPerSample);
+int get_random_sample_first_line();
 bool get_sample_for_test(int sampleIndex);
 void setTime();
 float _err_epoca;
@@ -103,11 +105,11 @@ int main() {
 #elif _WIN32
 	response = _getch();
 #endif
-	if (response == 'e') {
+	if (response == 'e' || response == 'E') {
 		read_weights_from_file();
 		predict();
 	}
-	if (response == 'c') {
+	else if (response == 'c') {
 		cout << "\nmodel loaded.\n";
 		read_weights_from_file();
 		cout << "\nlast inserted epsilon is : " << _epsilon <<
@@ -128,7 +130,7 @@ int main() {
 		}
 		apprendi();
 	}
-	if (response == 'n') {
+	else if (response == 'n') {
 		cout << "ATTENTION !!!!!!!!!!!!! are you sure to restart learning? press y to continue !!!!!!!!!!!!!!!!!!!\n\n";
 #ifdef __linux__
 		response = std::cin.get();
@@ -160,47 +162,38 @@ void init() {
 	}
 	//-----------------------------------	console input values + Hidden bias values
 	//cout << "input elements initialization:\n\n";
-	for (int i = 0; i < (numberOf_X); i++)
-	{
+	for (int i = 0; i < (numberOf_X); i++) {
 		//x[i] = 0.00f;
 		cout << "x[" << i << "]" << "=" << x[i] << "\n";
 	}
-	for (int i = 0; i < numberOf_H; i++)
-	{
+	for (int i = 0; i < numberOf_H; i++) {
 		cout << "hidden_bias[" << i << "]" << "=" << hidden_bias[i] << "-BIAS" << "\n";
 	}
 	//-----------------------------------	console hidden values + output bias values
-	for (int i = 0; i < (numberOf_H); i++)
-	{
+	for (int i = 0; i < (numberOf_H); i++) {
 		//h[i] = 0.00f;
 		cout << "h[" << i << "]" << "=" << h[i] << "\n";
 	}
-	for (int i = 0; i < numberOf_Y; i++)
-	{
+	for (int i = 0; i < numberOf_Y; i++) {
 		cout << "output_bias[" << i << "]" << "=" << output_bias[i] << "-BIAS" << "\n";
 	}
 	//cout << "output elements initialization:\n\n";
 	//-----------------------------------	console output values
-	for (int i = 0; i < numberOf_Y; i++)
-	{
+	for (int i = 0; i < numberOf_Y; i++) {
 		//y[i] = 0.00f;
 		cout << "y[" << i << "]=" << y[i] << "\n";
 	}
 	//-----------------------------------	console W1 values
 	cout << "W1 elements initialization:\n\n";
-	for (int i = 0; i < numberOf_X; i++)
-	{
-		for (int k = 0; k < numberOf_H; k++)
-		{
+	for (int i = 0; i < numberOf_X; i++) {
+		for (int k = 0; k < numberOf_H; k++) {
 			W1[i][k] = dist(gen) * init_scale_input;
 			cout << "W1[" << i << "]" << "[" << k << "]" << "=" << W1[i][k] << "\n";
 		}
 	}
 	//-----------------------------------	console W2 values
-	for (int k = 0; k < numberOf_H; k++)
-	{
-		for (int j = 0; j < numberOf_Y; j++)
-		{
+	for (int k = 0; k < numberOf_H; k++) {
+		for (int j = 0; j < numberOf_Y; j++) {
 			W2[k][j] = dist(gen) * init_scale_hidden;
 			cout << "W2[" << k << "]" << "[" << j << "]" << "=" << W2[k][j] << "\n";
 		}
@@ -209,11 +202,33 @@ void init() {
 void predict() {
 	float normalized_observed_output[numberOf_Y] = { 0.00 };
 	//float normalized_predicted_output[numberOf_Y] = { 0.00 };
-	int sampleIndex = 0;
 	while (true) {
-		std::cout << "\nInsert file sample line (Ctrl+C to esc):\n";
-		std::cin >> sampleIndex;
-		get_sample_for_test(sampleIndex);
+		std::cout << "\nPress 'e' for next random sample or 'q' to exit:\n";
+		char execution_command = '\0';
+#ifdef __linux__
+		if (!(std::cin >> execution_command)) {
+			return;
+		}
+#elif _WIN32
+		execution_command = _getch();
+#endif
+		if (execution_command == 'q' || execution_command == 'Q') {
+#ifdef __linux__
+#elif _WIN32
+			for (uint8_t beep_index = 0; beep_index < 5; beep_index++) {
+				Beep(3000, 200);
+			}
+#endif
+			return;
+		}
+		if (execution_command != 'e' && execution_command != 'E') {
+			continue;
+		}
+		int sample_first_line = get_random_sample_first_line();
+		std::cout << "\nRandom sample first line: " << sample_first_line << "\n";
+		if (!get_sample_for_test(sample_first_line)) {
+			continue;
+		}
 		normalizeArray(observed_data, normalized_observed_output, numberOf_Y);
 		x[0] = log(x[0] + 1.00f) / 10.00f;
 		x[1] = log(x[1] + 1.00f) / 10.00f;
@@ -232,13 +247,23 @@ void predict() {
 		std::cout << "varianza = :" << varianza << "\n";
 		std::cout << "cosine similarity percentage = :" << cosine_percentage << "%\n";
 		// Stampa dei risultati
-		std::cout << "\n x[0] = " << (exp(x[0] * 10.00f) - 1.00f) << " x[1] = " << (exp(x[1] * 10.00f) - 1.00f) << "\n"
-			<< "\n y[0] = " << y[0]
-			<< "\n y[1] = " << y[1]
-			<< "\n y[2] = " << y[2]
-			<< "\n y[3] = " << y[3]
-			<< "\n y[4] = " << y[4]
-			<< "\n y[5] = " << y[5];
+		std::cout << "\n Input X1 - Ampere (A) [x[0]] = " << (exp(x[0] * 10.00f) - 1.00f)
+			<< "\n Input X2 - Wattora (Wh) [x[1]] = " << (exp(x[1] * 10.00f) - 1.00f) << "\n";
+		std::ios::fmtflags original_output_flags = std::cout.flags();
+		std::streamsize original_output_precision = std::cout.precision();
+		std::cout << "\n+---------+---------------+---------------+\n"
+			<< "| " << std::left << std::setw(7) << "Battery"
+			<< " | " << std::setw(13) << "Predict (V)"
+			<< " | " << std::setw(13) << "Observed (V)" << " |\n"
+			<< "+---------+---------------+---------------+\n";
+		for (int i = 0; i < numberOf_Y; i++) {
+			std::cout << "| B" << std::left << std::setw(6) << i
+				<< " | " << std::right << std::fixed << std::setprecision(5) << std::setw(13) << y[i]
+				<< " | " << std::setw(13) << observed_data[i] << " |\n";
+		}
+		std::cout << "+---------+---------------+---------------+\n";
+		std::cout.flags(original_output_flags);
+		std::cout.precision(original_output_precision);
 	}
 }
 void apprendi() {
@@ -401,7 +426,7 @@ void evaluate_model(float* error_list, float& max_error, float& average_error, i
 		_err_rete = calculate_max_output_error();
 		if (_err_rete > max_error) {
 			max_error = _err_rete;
-			max_error_file_index_line = ((p) * lines_per_training_sample) + 1;
+			max_error_file_index_line = ((p)*lines_per_training_sample) + 1;
 		}
 		error_list[p] = _err_rete;
 		average_error += _err_rete;
@@ -424,8 +449,7 @@ void read_samples_from_file_diagram_battery() {
 	// Apertura del file
 	std::ifstream file(filename);
 	// Verifica se il file è stato aperto correttamente
-	if (!file.is_open())
-	{
+	if (!file.is_open()) {
 		std::cerr << "Errore nell'apertura del file " << filename << std::endl;
 	}
 	std::string line;
@@ -434,11 +458,9 @@ void read_samples_from_file_diagram_battery() {
 	int training_row_pre_index = 0;
 	std::string item;
 	stringstream ss1;
-	while (!file.eof())
-	{
+	while (!file.eof()) {
 		training_row_pre_index = training_row_index++;
-		switch (training_row_pre_index)
-		{
+		switch (training_row_pre_index) {
 		case 0:
 		case 1:
 		case 2:
@@ -490,8 +512,7 @@ void read_samples_from_file_diagram_battery() {
 #else
 #endif
 	}
-	else
-	{
+	else {
 		//cout << "\n\nTraining sample index is " << training_block_index << " and seems to have been loaded correctly.";
 #ifdef __linux__
 
@@ -519,12 +540,12 @@ void read_weights_from_file() {
 			}
 			in.read((char*)&output_bias[j], sizeof(float));
 		}
-	/*	for (int k = 0; k < numberOf_H; k++) {
-			in.read((char*)&hidden_bias[k], sizeof(float));
-		}
-		for (int j = 0; j < numberOf_Y; j++) {
-			in.read((char*)&output_bias[j], sizeof(float));
-		}*/
+		/*	for (int k = 0; k < numberOf_H; k++) {
+				in.read((char*)&hidden_bias[k], sizeof(float));
+			}
+			for (int j = 0; j < numberOf_Y; j++) {
+				in.read((char*)&output_bias[j], sizeof(float));
+			}*/
 		in.read((char*)&_err_epoca_min_value, sizeof(float));
 		in.read((char*)&_epsilon, sizeof(float));
 		//in.read((char*)&x[numberOf_X - 1], sizeof(float));
@@ -695,6 +716,11 @@ void setTime() {
 #endif
 	std::strftime(_global_time, sizeof(_global_time), "%H:%M:%S", &local_time);
 }
+int get_random_sample_first_line() {
+	static std::mt19937 random_generator(std::random_device{}());
+	std::uniform_int_distribution<int> sample_distribution(0, training_samples - 1);
+	return sample_distribution(random_generator) * lines_per_training_sample + 1;
+}
 bool get_sample_for_test(int sampleIndex) {
 	// Composizione del path completo del file
 	std::string filename = _relative_files_path + "/" + _files_name;
@@ -747,9 +773,9 @@ bool get_sample_for_test(int sampleIndex) {
 		}
 	}
 
-	// Legge la settima riga per aggiornare x[0]
+	// Legge la settima riga (wattora) per aggiornare x[1]
 	if (!std::getline(file, line)) {
-		std::cerr << "Errore: file terminato prematuramente nella lettura di x[0] (riga "
+		std::cerr << "Errore: file terminato prematuramente nella lettura di x[1] (riga "
 			<< (startLine + 7) << ")." << std::endl;
 		return false;
 	}
@@ -760,20 +786,20 @@ bool get_sample_for_test(int sampleIndex) {
 	std::getline(ss, token, ';');
 	// Salta il secondo token
 	std::getline(ss, token, ';');
-	// Legge il terzo token (il valore per x[0])
+	// Legge il terzo token (il valore per x[1])
 	std::getline(ss, token, ';');
 	try {
 		x[1] = std::stof(token);
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Errore nella conversione del valore nella riga " << (startLine + 7)
-			<< " per x[0]: \"" << token << "\"." << std::endl;
+			<< " per x[1]: \"" << token << "\"." << std::endl;
 		return false;
 	}
 
-	// Legge l'ottava riga per aggiornare x[1]
+	// Legge l'ottava riga (ampere) per aggiornare x[0]
 	if (!std::getline(file, line)) {
-		std::cerr << "Errore: file terminato prematuramente nella lettura di x[1] (riga "
+		std::cerr << "Errore: file terminato prematuramente nella lettura di x[0] (riga "
 			<< (startLine + 8) << ")." << std::endl;
 		return false;
 	}
@@ -784,14 +810,14 @@ bool get_sample_for_test(int sampleIndex) {
 	std::getline(ss, token, ';');
 	// Salta il secondo token
 	std::getline(ss, token, ';');
-	// Legge il terzo token (il valore per x[1])
+	// Legge il terzo token (il valore per x[0])
 	std::getline(ss, token, ';');
 	try {
 		x[0] = std::stof(token);
 	}
 	catch (const std::exception& e) {
 		std::cerr << "Errore nella conversione del valore nella riga " << (startLine + 8)
-			<< " per x[1]: \"" << token << "\"." << std::endl;
+			<< " per x[0]: \"" << token << "\"." << std::endl;
 		return false;
 	}
 	file.close();
@@ -821,6 +847,3 @@ int count_training_samples(int linesPerSample) {
 	}
 	return totalLines / linesPerSample;
 }
-
-
-

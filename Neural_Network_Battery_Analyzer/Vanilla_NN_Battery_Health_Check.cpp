@@ -50,6 +50,7 @@ const int training_report_epoch_interval = 10000;
 const uint8_t numberOf_X = 2;
 const uint8_t numberOf_H = 25;
 const uint8_t numberOf_Y = 6;
+const float leaky_relu_alpha = 0.01f;
 float output_bias[numberOf_Y] = { 0.00 };
 float hidden_bias[numberOf_H] = { 0.00 };
 float W1[numberOf_X][numberOf_H] = { 0.00 };
@@ -69,8 +70,8 @@ const string _files_name = "72V_Battery.csv";
 float err_min_rete = FLT_MAX;
 float _max_single_traning_output_error_average = 0.00f;
 float _err_epoca_min_value = FLT_MAX;
-float relu(float x) {
-	return (x > 0) ? x : 0;
+float leaky_relu(float value) {
+	return (value > 0.0f) ? value : leaky_relu_alpha * value;
 }
 int main() {
 
@@ -331,7 +332,7 @@ void forward() {
 		}
 		//insert X bias
 		Zk += hidden_bias[k];
-		h[k] = relu(Zk);
+		h[k] = leaky_relu(Zk);
 	}
 	for (int j = 0; j < numberOf_Y; j++) {
 		float Zj = 0.00f;
@@ -357,11 +358,10 @@ void back_propagate() {
 		// Aggiornamento del bias per il layer di output
 		output_bias[j] += _epsilon * delta;
 	}
-	// Calcolo del delta per il layer nascosto usando la derivata della ReLU
+	// Calcolo del delta per il layer nascosto usando la derivata della Leaky ReLU
 	for (int k = 0; k < numberOf_H; k++) {
-		// Derivata della ReLU: 1 se il neurone è attivo (h[k] > 0), 0 altrimenti
-		float relu_deriv = (h[k] > 0.0f) ? 1.0f : 0.0f;
-		delta = err_H[k] * relu_deriv;
+		float leaky_relu_derivative = (h[k] > 0.0f) ? 1.0f : leaky_relu_alpha;
+		delta = err_H[k] * leaky_relu_derivative;
 		// Aggiornamento dei pesi del layer nascosto
 		for (int i = 0; i < numberOf_X; i++) {
 			W1[i][k] += (_epsilon * delta * x[i]);
@@ -413,7 +413,7 @@ void print_hidden_activation_status(const uint16_t* hidden_activation_count) {
 	for (int k = 0; k < numberOf_H; k++) {
 		std::cout << "h[" << k << "]=" << hidden_activation_count[k] << "/" << training_samples;
 		if (hidden_activation_count[k] == 0) {
-			std::cout << " DEAD";
+			std::cout << " LEAKY_ONLY";
 		}
 		std::cout << "\n";
 	}
@@ -821,7 +821,6 @@ int count_training_samples(int linesPerSample) {
 	}
 	return totalLines / linesPerSample;
 }
-
 
 
 
